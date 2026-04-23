@@ -1,0 +1,13 @@
+---
+
+- hosts: all
+  remote_user: ansible
+
+  roles:
+    # - ssh
+    # - admin_users
+    # - firewall
+    # - 3xui
+    - inbounds
+    # - mtproxymax
+    # - monitoring_bot

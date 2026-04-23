@@ -1,0 +1,14 @@
+[ ] Add option to specify inbound port
+[ ] Add automatic reality checking (make it save to file?)
+[ ] Make sure that dry run works
+[ ] Add option to enable and disable 3x ui
+[ ] Add secret vault
+[ ] Add autogeneration of creds for the panel?
+[ ] Add flag to remove all opened ports not present in ansible
+[ ] Add flag to remove all clients not present in ansible
+[ ] Replace all ui with xui
+[ ] Add monitoring bot
+[ ] Connect monitoring bot to s3
+[ ] Replace inbounds with xui_inbounds
+[ ] Make installation of proxymax and 3x ui look the same
+[ ] Add removal of users by removing them from code

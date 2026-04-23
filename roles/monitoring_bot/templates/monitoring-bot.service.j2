@@ -1,0 +1,19 @@
+[Unit]
+Description=Server Monitoring Bot
+After=network.target
+
+[Service]
+Type=oneshot
+User=monitoring-bot
+Group=monitoring-bot
+Environment="AWS_ACCESS_KEY_ID={{ aws_access_key_id }}"
+Environment="AWS_SECRET_ACCESS_KEY={{ aws_secret_access_key }}"
+Environment="AWS_DEFAULT_REGION={{ aws_region }}"
+Environment="S3_BUCKET_NAME={{ s3_bucket_name }}"
+{% if s3_endpoint_url is defined and s3_endpoint_url %}
+Environment="S3_ENDPOINT_URL={{ s3_endpoint_url }}"
+{% endif %}
+ExecStart=/opt/monitoring-bot/venv/bin/python /opt/monitoring-bot/main.py
+
+[Install]
+WantedBy=multi-user.target

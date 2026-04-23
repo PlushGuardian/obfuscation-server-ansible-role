@@ -1,0 +1,59 @@
+# tasks/main.yml
+---
+# ------------------------------------------------------------------
+#  REMOVE STALE ADMINS
+# ------------------------------------------------------------------
+- name: Get current members of sudo group
+  getent:
+    database: group
+    key: sudo
+  register: sudo_group
+  become: yes
+
+- name: Compute users to remove (sudo group members not in admin list)
+  set_fact:
+    current_sudo_users: "{{ sudo_group.ansible_facts.getent_group.sudo[2].split(',') | default([]) }}"
+    admin_usernames: "{{ admin_users | map(attribute='username') | list }}"
+
+- name: Remove stale admin users
+  user:
+    name: "{{ item }}"
+    state: absent
+    remove: yes
+  loop: "{{ current_sudo_users }}"
+  when:
+    - item not in admin_usernames
+    - item != 'root'
+    - item != ansible_user
+  become: yes
+
+# ------------------------------------------------------------------
+#  ADD NEW ADMINS
+# ------------------------------------------------------------------
+- name: Ensure admin users exist
+  user:
+    name: "{{ item.username }}"
+    state: present
+    groups: sudo
+    append: yes
+    shell: /bin/bash
+    create_home: yes
+  loop: "{{ admin_users }}"
+  become: yes
+
+- name: Set authorized SSH keys for admin users
+  ansible.posix.authorized_key:
+    user: "{{ item.username }}"
+    key: "{{ item.ssh_key }}"
+    state: present
+    exclusive: yes
+  loop: "{{ admin_users }}"
+  become: yes
+
+- name: Allow passwordless sudo for admin group
+  ansible.builtin.copy:
+    content: "%sudo ALL=(ALL) NOPASSWD: ALL\n"
+    dest: /etc/sudoers.d/90-admin-nopasswd
+    validate: visudo -cf %s
+    mode: '0440'
+  become: yes

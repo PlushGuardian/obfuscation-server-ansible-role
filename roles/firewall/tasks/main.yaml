@@ -1,0 +1,52 @@
+
+- name: Backup UFW before.rules
+  copy:
+    src: /etc/ufw/before.rules
+    dest: /etc/ufw/before.rules.bak
+    remote_src: yes
+    backup: yes
+  become: yes
+
+- name: Block ICMP echo-request (ping) in INPUT chain
+  replace:
+    path: /etc/ufw/before.rules
+    regexp: '^(-A ufw-before-input -p icmp --icmp-type echo-request -j) ACCEPT$'
+    replace: '\1 DROP'
+  become: yes
+
+- name: Block ICMP echo-request (ping) in FORWARD chain
+  replace:
+    path: /etc/ufw/before.rules
+    regexp: '^(-A ufw-before-forward -p icmp --icmp-type echo-request -j) ACCEPT$'
+    replace: '\1 DROP'
+  become: yes
+
+- name: Reload UFW to apply ICMP changes
+  ufw:
+    state: reloaded
+  become: yes
+
+- name: Allow traffic on port 80 for ACME
+  ufw:
+    rule: allow
+    port: "{{ ui_panel_acme_port}}"
+  become: yes
+
+- name: Allow traffic on ansible port (aka ssh port)
+  ufw:
+    rule: allow
+    port: "{{ ansible_port }}"
+    proto: tcp
+  become: yes
+
+- name: Allow traffic on 3X-UI panel port
+  ufw:
+    rule: allow
+    port: "{{ ui_panel_port }}"
+    proto: tcp
+  become: yes
+
+- name: Enable UFW (if not already enabled)
+  ufw:
+    state: enabled
+  become: yes

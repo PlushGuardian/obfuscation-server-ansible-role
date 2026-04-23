@@ -1,0 +1,52 @@
+# =========================================
+#      INSTALL 3X-UI IF NOT INSTALLED
+# =========================================
+- name: Check if 3x-ui files are present
+  stat:
+    path: "{{ item }}"
+  with_items:
+    - /usr/local/x-ui/x-ui  # Main binary
+    - /usr/bin/x-ui         # Management script
+  register: xui_files
+  when: not xui_installed_skipped | default(false)
+
+- name: Determine if 3x-ui is installed
+  set_fact:
+    xui_installed: "{{ xui_files.results | selectattr('stat.exists', 'equalto', true) | list | length > 0 }}"
+
+- name: Download 3x-ui install script
+  get_url:
+    url: https://raw.githubusercontent.com/mhsanaei/3x-ui/v2.8.11/install.sh
+    dest: /tmp/install.sh
+    mode: '0755'
+  when: not xui_installed
+
+- name: Install 3x-ui non‑interactively using a wrapper script
+  script: run_installation_interactive.sh
+  become: yes
+  environment:
+    UI_PANEL_PORT: "{{ ui_panel_port }}"
+    UI_PANEL_ACME_PORT: "{{ ui_panel_acme_port }}"
+    TERM: linux   # helps some prompts behave as if interactive
+  args:
+    executable: bash
+  timeout: 600
+  when: not xui_installed
+#  TODO add update to a certain version
+
+
+# =========================================
+#        UPDATE WEB PAGE CREDENTIALS
+# =========================================
+
+
+- name: Reset 3x-UI Web UI credentials via wrapper script
+  script: reset_credentials.sh
+  become: yes
+  environment:
+    UI_USERNAME: "{{ ui_panel_username }}"
+    UI_PASSWORD: "{{ ui_panel_password }}"
+    TERM: linux   # helps some prompts behave as if interactive
+  args:
+    executable: bash
+  timeout: 60
