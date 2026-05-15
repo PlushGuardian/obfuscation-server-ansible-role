@@ -21,32 +21,54 @@
     replace: '\1 DROP'
   become: yes
 
-- name: Reload UFW to apply ICMP changes
-  ufw:
-    state: reloaded
-  become: yes
 
-- name: Allow traffic on port 80 for ACME
-  ufw:
-    rule: allow
-    port: "{{ ui_panel_acme_port}}"
-  become: yes
 
-- name: Allow traffic on ansible port (aka ssh port)
-  ufw:
+
+
+- name: Check current UFW status
+  ansible.builtin.command: ufw status
+  register: ufw_status
+  check_mode: no
+  changed_when: false
+  tags:
+    - firewall
+
+- name: Block ICMP echo-request (ping) in the INPUT chain
+  ansible.builtin.replace:
+    path: /etc/ufw/before.rules
+    regexp: '^(-A ufw-before-input -p icmp --icmp-type echo-request -j)\s*ACCEPT'
+    replace: '\1 DROP'
+    backup: yes
+  diff: yes
+  become: yes
+  notify: reload ufw
+  tags:
+    - firewall
+
+- name: Block ICMP echo-request (ping) in the FORWARD chain
+  ansible.builtin.replace:
+    path: /etc/ufw/before.rules
+    regexp: '^(-A ufw-before-forward -p icmp --icmp-type echo-request -j)\s*ACCEPT'
+    replace: '\1 DROP'
+    backup: no
+  diff: yes
+  become: yes
+  notify: reload ufw
+  tags:
+    - firewall
+
+- name: Allow traffic on SSH / Ansible port
+  ansible.builtin.ufw:
     rule: allow
     port: "{{ ansible_port }}"
     proto: tcp
   become: yes
+  tags:
+    - firewall
 
-- name: Allow traffic on 3X-UI panel port
-  ufw:
-    rule: allow
-    port: "{{ ui_panel_port }}"
-    proto: tcp
-  become: yes
-
-- name: Enable UFW (if not already enabled)
-  ufw:
+- name: Ensure UFW is enabled
+  ansible.builtin.ufw:
     state: enabled
   become: yes
+  tags:
+    - firewall

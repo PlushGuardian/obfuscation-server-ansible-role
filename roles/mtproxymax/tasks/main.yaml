@@ -34,6 +34,9 @@
       - "Private IP (local interface): {{ private_ip }}"
       - "NAT will be configured: {{ ansible_host != private_ip }}"
 
+
+## Add docker installation
+
 # ================================================
 # 2. Install MTProxyMax
 # ================================================

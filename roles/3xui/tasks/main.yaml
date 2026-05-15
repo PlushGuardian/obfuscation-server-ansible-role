@@ -21,6 +21,7 @@
     mode: '0755'
   when: not xui_installed
 
+
 - name: Install 3x-ui non‑interactively using a wrapper script
   script: run_installation_interactive.sh
   become: yes
@@ -33,6 +34,26 @@
   timeout: 600
   when: not xui_installed
 #  TODO add update to a certain version
+
+
+- name: Allow traffic on port 80 for ACME
+  ansible.builtin.ufw:
+    rule: allow
+    port: "{{ ui_panel_acme_port}}"
+  become: yes
+  tags:
+    - firewall
+
+- name: Allow traffic on 3X-UI panel port
+  ansible.builtin.ufw:
+    rule: allow
+    port: "{{ ui_panel_port }}"
+    proto: tcp
+  become: yes
+  tags:
+    - firewall
+
+
 
 
 # =========================================
