@@ -1,0 +1,8 @@
+- name: Reload UFW if it is already active
+  ansible.builtin.ufw:
+    state: reloaded
+  become: true
+  when:
+    - "'Status: active' in ufw_status.stdout"
+  changed_when: false
+  listen: reload ufw

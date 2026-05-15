@@ -2,7 +2,7 @@
   apt:
     update_cache: yes
     cache_valid_time: 3600
-  become: yes
+  become: true
 
 - name: Install required system packages
   apt:
@@ -13,18 +13,18 @@
       - libssl-dev
       - zlib1g-dev
     state: present
-  become: yes
+  become: true
 
 - name: Open firewall port for MTProto
   ufw:
     rule: allow
     port: "{{ mtproxy_port }}"
     proto: tcp
-  become: yes
+  become: true
 
 # Determine private IP (the interface address Ansible connects to)
 - name: Set private_ip fact
-  set_fact:
+  ansible.builtin.set_fact:
     private_ip: "{{ ansible_default_ipv4.address }}"
 
 - name: Display IP configuration
@@ -33,6 +33,9 @@
       - "Public IP (from inventory): {{ ansible_host }}"
       - "Private IP (local interface): {{ private_ip }}"
       - "NAT will be configured: {{ ansible_host != private_ip }}"
+
+
+## Add docker installation
 
 # ================================================
 # 2. Install MTProxyMax
@@ -49,12 +52,12 @@
     url: "{{ mtproxymax_installer_url }}"
     dest: /tmp/mtproxymax-install.sh
     mode: '0755'
-  become: yes
+  become: true
   when: mtproxymax_check.rc != 0
 
 - name: Install MTProxyMax non‑interactively using a wrapper script
   script: run_installation_interactive.sh
-  become: yes
+  become: true
   environment:
     MTPROXY_PORT: "{{ mtproxy_port }}"
     MTPROXYMAX_FAKETLS_DOMAIN: "{{ mtproxy_faketls_domain | default('yandex.com') }}"
@@ -76,11 +79,11 @@
   failed_when: false
 
 - name: Parse current NAT value
-  set_fact:
+  ansible.builtin.set_fact:
     current_nat_value: "{{ current_nat_config.stdout | trim if current_nat_config.stdout != '' else '' }}"
 
 - name: Determine desired NAT configuration
-  set_fact:
+  ansible.builtin.set_fact:
     desired_nat_value: "{{ private_ip + ':' + ansible_host if ansible_host != private_ip else '' }}"
 
 - name: Update NAT configuration if needed
@@ -88,7 +91,7 @@
   when:
     - desired_nat_value != current_nat_value
   notify: restart mtproxymax
-  become: yes
+  become: true
 
 # ================================================
 # 4. Configure Automatic Updates (Cron Job)
@@ -114,7 +117,7 @@
   failed_when:
     - user_add_result.rc != 0
     - "'already exists' not in user_add_result.stderr"
-  become: yes
+  become: true
 
 - name: Apply per-user limits
   command: >
@@ -127,7 +130,7 @@
   when:
     - item.max_conns is defined or item.max_ips is defined or item.quota is defined or item.expires is defined
   changed_when: true
-  become: yes
+  become: true
 
 - name: Generate proxy links for users
   command: "mtproxymax secret link {{ item.name }}"
@@ -157,4 +160,4 @@
     state: started
     enabled: yes
     daemon_reload: yes
-  become: yes
+  become: true

@@ -1,13 +1,13 @@
 - name: Start 3x‑UI panel service
   ansible.builtin.command:
     cmd: x-ui start
-  become: yes
+  become: true
   changed_when: true
 
 - name: Retrieve 3x‑UI configuration settings
   ansible.builtin.shell: |
     echo "n" | x-ui settings
-  become: yes
+  become: true
   register: xui_settings_output
   changed_when: false
 
@@ -52,7 +52,7 @@
              and login_response.json.get('success', true) == false))
 
 - name: Extract session cookie
-  set_fact:
+  ansible.builtin.set_fact:
     session_cookie: "{{ login_response.set_cookie | regex_replace(';.*', '') }}"
 
 - name: Add inbounds from host variables

@@ -15,7 +15,7 @@
       fi
     done
   register: egress_port_finder
-  become: yes
+  become: true
   when: create_egress_inbound
 
 - name: Construct payload for egress inbound

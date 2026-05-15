@@ -1,0 +1,13 @@
+name: Release
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  semantic:
+    uses: ./.github/workflows/reusable-semantic-release.yaml
+    secrets:
+      gh_token: ${{ secrets.GH_RELEASE_PAT }}

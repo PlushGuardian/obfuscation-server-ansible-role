@@ -1,0 +1,60 @@
+---
+- name: Run VictoriaMetrics container
+  docker_container:
+    name: victoria-metrics
+    image: victoriametrics/victoria-metrics:latest
+    state: started
+    restart_policy: unless-stopped
+    network_mode: host
+    command:
+      - '-storageDataPath=/storage'
+      - '-retentionPeriod={{ vm_retention_period }}'
+      - '-httpListenAddr={{ vm_listen_addr }}'
+      - '-httpAuth.username={{ vm_user }}'
+      - '-httpAuth.password={{ vm_password }}'
+      - '-selfScrapeInterval=15s'
+    volumes:
+      - /var/lib/victoria-metrics:/storage
+  become: true
+
+# - name: Install systemd timer for vmbackup
+#   block:
+#     - name: Write vmbackup script
+#       copy:
+#         dest: /usr/local/bin/vmbackup.sh
+#         mode: 0755
+#         content: |
+#           #!/bin/bash
+#           TIMESTAMP=$(date +%Y%m%d-%H%M)
+#           docker run --rm --network host \
+#             -e AWS_ACCESS_KEY_ID="{{ s3_access_key }}" \
+#             -e AWS_SECRET_ACCESS_KEY="{{ s3_secret_key }}" \
+#             victoriametrics/vmbackup:latest \
+#             -storageDataPath=/storage \
+#             -snapshot.createURL=http://localhost:8428/snapshot/create \
+#             -dst=s3://{{ s3_bucket }}/backups/{{ '{{' }} .TIMESTAMP {{ '}}' }}
+#     - name: Create systemd service unit
+#       copy:
+#         dest: /etc/systemd/system/vmbackup.service
+#         content: |
+#           [Unit]
+#           Description=VictoriaMetrics Backup
+#           [Service]
+#           Type=oneshot
+#           ExecStart=/usr/local/bin/vmbackup.sh
+#     - name: Create systemd timer
+#       copy:
+#         dest: /etc/systemd/system/vmbackup.timer
+#         content: |
+#           [Unit]
+#           Description=Run VictoriaMetrics backup every hour
+#           [Timer]
+#           OnCalendar=hourly
+#           Persistent=true
+#           [Install]
+#           WantedBy=timers.target
+#     - name: Enable and start backup timer
+#       systemd:
+#         name: vmbackup.timer
+#         state: started
+#         enabled: yes

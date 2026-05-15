@@ -1,0 +1,26 @@
+---
+
+- name: Download Tailscale install script
+  get_url:
+    url: https://tailscale.com/install.sh
+    dest: /tmp/install-tailscale.sh
+    mode: 0755
+
+- name: Run Tailscale installer
+  command: /tmp/install-tailscale.sh
+  become: true
+
+- name: Authenticate Tailscale with auth key
+  command: "tailscale up --authkey {{ tailscale_auth_key }} --accept-routes"
+  changed_when: false
+  become: true
+
+# Retrieve and persist Tailscale IP for later use
+- name: Get Tailscale IP
+  command: tailscale ip -4
+  register: tailscale_ip_cmd
+  changed_when: false
+
+- name: Set fact for Tailscale IP
+  ansible.builtin.set_fact:
+    tailscale_ip: "{{ tailscale_ip_cmd.stdout }}"

@@ -29,7 +29,7 @@
     regexp: '^(?!\s*#)(\s*(PasswordAuthentication|PermitRootLogin|PermitEmptyPasswords)\s+.*)$'
     replace: '# \1'
   loop: "{{ override_files.files }}"
-  become: yes
+  become: true
 
 - name: Disable password authentication for all users
   lineinfile:
@@ -39,7 +39,7 @@
     state: present
     backup: yes
   notify: restart ssh
-  become: yes
+  become: true
 
 - name: Forbid empty passwords
   lineinfile:
@@ -49,7 +49,7 @@
     state: present
     backup: yes
   notify: restart ssh
-  become: yes
+  become: true
 
 - name: Disable SSH access for root
   lineinfile:
@@ -59,4 +59,4 @@
     state: present
     backup: yes
   notify: restart ssh
-  become: yes
+  become: true

@@ -11,7 +11,7 @@
   when: not xui_installed_skipped | default(false)
 
 - name: Determine if 3x-ui is installed
-  set_fact:
+  ansible.builtin.set_fact:
     xui_installed: "{{ xui_files.results | selectattr('stat.exists', 'equalto', true) | list | length > 0 }}"
 
 - name: Download 3x-ui install script
@@ -21,9 +21,10 @@
     mode: '0755'
   when: not xui_installed
 
+
 - name: Install 3x-ui non‑interactively using a wrapper script
   script: run_installation_interactive.sh
-  become: yes
+  become: true
   environment:
     UI_PANEL_PORT: "{{ ui_panel_port }}"
     UI_PANEL_ACME_PORT: "{{ ui_panel_acme_port }}"
@@ -35,6 +36,26 @@
 #  TODO add update to a certain version
 
 
+- name: Allow traffic on port 80 for ACME
+  ansible.builtin.ufw:
+    rule: allow
+    port: "{{ ui_panel_acme_port}}"
+  become: true
+  tags:
+    - firewall
+
+- name: Allow traffic on 3X-UI panel port
+  ansible.builtin.ufw:
+    rule: allow
+    port: "{{ ui_panel_port }}"
+    proto: tcp
+  become: true
+  tags:
+    - firewall
+
+
+
+
 # =========================================
 #        UPDATE WEB PAGE CREDENTIALS
 # =========================================
@@ -42,7 +63,7 @@
 
 - name: Reset 3x-UI Web UI credentials via wrapper script
   script: reset_credentials.sh
-  become: yes
+  become: true
   environment:
     UI_USERNAME: "{{ ui_panel_username }}"
     UI_PASSWORD: "{{ ui_panel_password }}"

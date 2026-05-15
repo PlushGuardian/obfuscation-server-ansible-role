@@ -1,0 +1,43 @@
+---
+- name: Core setup of hosts
+  hosts: all
+  remote_user: ansible
+
+  roles:
+    - ssh
+    - admin_users
+    - firewall
+
+  tasks:
+    - name: Install Docker
+      ansible.builtin.include_role:
+        name: geerlingguy.docker
+        apply:
+          become: true
+
+- name: Configure monitoring on all hosts
+  hosts: all
+  remote_user: ansible
+  roles:
+    - tailscale
+    - node_exporter
+    - vmagent
+
+- name: Setup metrics storage on a server
+  hosts: monitoring_servers
+  remote_user: ansible
+  roles:
+    - victoriametrics
+
+- name: Install MTProxyMax and configure secrets
+  hosts: mtproxymax_hosts
+  remote_user: ansible
+  roles:
+    - mtproxymax
+
+- name: Install 3X-UI and configure inbounds
+  hosts: threexui_hosts
+  remote_user: ansible
+  roles:
+    - 3xui
+    - inbounds
