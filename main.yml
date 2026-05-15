@@ -13,7 +13,7 @@
       ansible.builtin.include_role:
         name: geerlingguy.docker
         apply:
-          become: yes
+          become: true
 
 - name: Configure monitoring on all hosts
   hosts: all

@@ -73,14 +73,14 @@
 #     path: "{{ reality_scanner_dir }}"
 #     state: directory
 #     mode: '0755'
-#   become: yes
+#   become: true
 
 # - name: Create reality scanner output directory
 #   ansible.builtin.file:
 #     path: "{{ reality_scanner_output_dir }}"
 #     state: directory
 #     mode: '0755'
-#   become: yes
+#   become: true
 
 # - name: Detect system architecture
 #   ansible.builtin.set_fact:
@@ -96,7 +96,7 @@
 #     dest: "{{ reality_scanner_dir }}/RealiTLScanner"
 #     mode: '0755'
 #   register: download_result
-#   become: yes
+#   become: true
 
 # - name: Set fact for scanner binary path
 #   ansible.builtin.set_fact:
@@ -153,14 +153,14 @@
 #   when:
 #     - slurped_csv is success
 #     - slurped_csv.content | length > 0
-#   become: yes
+#   become: true
 
 # - name: Clean up CSV
 #   ansible.builtin.file:
 #     path: "{{ reality_scanner_output_dir }}/{{ inventory_hostname }}_dest.csv"
 #     state: absent
 #   run_once: true
-#   become: yes
+#   become: true
 
 # - name: Display results
 #   ansible.builtin.debug:

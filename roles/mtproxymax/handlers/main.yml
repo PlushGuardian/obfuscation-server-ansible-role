@@ -1,6 +1,6 @@
 ---
-  - name: restart mtproxymax
+  - name: Restart mtproxymax
     systemd:
       name: mtproxymax
       state: restarted
-    become: yes
+    become: true

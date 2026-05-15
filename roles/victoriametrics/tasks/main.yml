@@ -1,4 +1,4 @@
-
+---
 - name: Run VictoriaMetrics container
   docker_container:
     name: victoria-metrics
@@ -15,7 +15,7 @@
       - '-selfScrapeInterval=15s'
     volumes:
       - /var/lib/victoria-metrics:/storage
-  become: yes
+  become: true
 
 # - name: Install systemd timer for vmbackup
 #   block:

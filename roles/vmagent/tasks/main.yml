@@ -1,15 +1,15 @@
 ---
 - name: Ensure vmagent config directory exists
-  file:
+  ansible.builtin.file:
     path: /etc/vmagent
     state: directory
-  become: yes
+  become: true
 
 - name: Configure vmagent to scrape node_exporter and write to central VictoriaMetrics
   template:
     src: "{{ role_path }}/templates/vmagent_config.yaml.j2"
     dest: /etc/vmagent/scrape.yml
-  become: yes
+  become: true
 
 - name: Run vmagent container
   docker_container:
@@ -27,4 +27,4 @@
       - '-remoteWrite.basicAuth.password={{ vm_password }}'
       - '-httpListenAddr=:{{ vmagent_port }}'
       - '-remoteWrite.label=node={{ inventory_hostname }}'
-  become: yes
+  become: true

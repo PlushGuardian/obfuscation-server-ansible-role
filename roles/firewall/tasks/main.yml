@@ -5,21 +5,21 @@
     dest: /etc/ufw/before.rules.bak
     remote_src: yes
     backup: yes
-  become: yes
+  become: true
 
 - name: Block ICMP echo-request (ping) in INPUT chain
   replace:
     path: /etc/ufw/before.rules
     regexp: '^(-A ufw-before-input -p icmp --icmp-type echo-request -j) ACCEPT$'
     replace: '\1 DROP'
-  become: yes
+  become: true
 
 - name: Block ICMP echo-request (ping) in FORWARD chain
   replace:
     path: /etc/ufw/before.rules
     regexp: '^(-A ufw-before-forward -p icmp --icmp-type echo-request -j) ACCEPT$'
     replace: '\1 DROP'
-  become: yes
+  become: true
 
 
 
@@ -40,7 +40,7 @@
     replace: '\1 DROP'
     backup: yes
   diff: yes
-  become: yes
+  become: true
   notify: reload ufw
   tags:
     - firewall
@@ -52,7 +52,7 @@
     replace: '\1 DROP'
     backup: no
   diff: yes
-  become: yes
+  become: true
   notify: reload ufw
   tags:
     - firewall
@@ -62,13 +62,13 @@
     rule: allow
     port: "{{ ansible_port }}"
     proto: tcp
-  become: yes
+  become: true
   tags:
     - firewall
 
 - name: Ensure UFW is enabled
   ansible.builtin.ufw:
     state: enabled
-  become: yes
+  become: true
   tags:
     - firewall
