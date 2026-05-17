@@ -3,43 +3,44 @@
 # ===========================================
 - name: Get existing inbounds from 3X-UI
   ansible.builtin.uri:
-    url: "{{ ui_panel_url }}/panel/api/inbounds/list"
+    url: "{{ x_ui_inbounds_panel_url }}/panel/api/inbounds/list"
     method: GET
     headers:
       Cookie: "{{ session_cookie }}"
     status_code: 200
-  register: existing_inbounds_response
+  register: x_ui_inbounds_x_ui_inbounds_existing_inbounds_response
   failed_when: >-
-    existing_inbounds_response.json is not defined or
-    existing_inbounds_response.json.success != true
+    x_ui_inbounds_x_ui_inbounds_existing_inbounds_response.json is not defined or
+    x_ui_inbounds_x_ui_inbounds_existing_inbounds_response.json.success != true
 
 - name: Find inbound by remark
   ansible.builtin.set_fact:
-    existing_inbound: >-
+    x_ui_inbounds_existing_inbound: >-
       {{
-        existing_inbounds_response.json.obj
+        x_ui_inbounds_x_ui_inbounds_existing_inbounds_response.json.obj
         | selectattr('remark', 'equalto', inbound_item.name)
         | first | default(None)
       }}
 
 - name: Parse streamSettings and settings if inbound exists
+  when: x_ui_inbounds_existing_inbound is not none
   block:
     - name: Parse streamSettings from JSON string
       ansible.builtin.set_fact:
-        existing_streamSettings: "{{ existing_inbound.streamSettings | from_json }}"
-      when: existing_inbound is not none
+        x_ui_inbounds_existing_stream_settings: "{{ x_ui_inbounds_existing_inbound.streamSettings | from_json }}"
+      when: x_ui_inbounds_existing_inbound is not none
 
     - name: Parse settings from JSON string (though we might not need it for inbound update)
       ansible.builtin.set_fact:
-        existing_settings: "{{ existing_inbound.settings | from_json }}"
-      when: existing_inbound is not none
-  when: existing_inbound is not none
+        x_ui_inbounds_existing_settings: "{{ x_ui_inbounds_existing_inbound.settings | from_json }}"
+      when: x_ui_inbounds_existing_inbound is not none
 
 # ===========================================
 #   GENERATE INBOUND-SPECIFIC VALUES (only if new)
 # ===========================================
 - name: Find an unused port in the range 10000-49151 (for new inbound)
   ansible.builtin.shell: |
+    set -o pipefail
     while true; do
       PORT=$(shuf -i {{ port_range_start }}-{{ port_range_end }} -n 1)
       if ! ss -tuln | grep -q ":${PORT} " && ! ufw status | grep -q "${PORT}"; then
@@ -47,17 +48,17 @@
         break
       fi
     done
-  register: port_finder
+  register: x_ui_inbounds_port_finder
   changed_when: false
   become: true
-  failed_when: port_finder.rc != 0 or port_finder.stderr != ""
-  when: existing_inbound is none
+  failed_when: x_ui_inbounds_port_finder.rc != 0 or x_ui_inbounds_port_finder.stderr != ""
+  when: x_ui_inbounds_existing_inbound is none
 
 - name: Set inbound port as fact (use existing port if inbound exists)
   ansible.builtin.set_fact:
-    inbound_port: >-
+    x_ui_inbounds_inbound_port: >-
       {{
-        existing_inbound.port | default(port_finder.stdout | trim)
+        x_ui_inbounds_existing_inbound.port | default(x_ui_inbounds_port_finder.stdout | trim)
       }}
 
 - name: Configure Reality settings based on host IP
@@ -68,14 +69,14 @@
 # ===========================================
 - name: Build settings dictionary (empty clients)
   ansible.builtin.set_fact:
-    settings_dict:
+    x_ui_inbounds_settings_dict:
       clients: []          # clients will be handled separately
       decryption: "none"
       fallbacks: []
 
 - name: Build streamSettings dictionary
   ansible.builtin.set_fact:
-    streamSettings_dict:
+    x_ui_inbounds_stream_settings_dict:
       network: "{{ inbound_network }}"
       security: "reality"
       realitySettings:
@@ -97,73 +98,73 @@
 
 - name: Convert settings and streamSettings to JSON strings
   ansible.builtin.set_fact:
-    settings_string: "{{ settings_dict | to_json }}"
-    streamSettings_string: "{{ streamSettings_dict | to_json }}"
+    x_ui_inbounds_settings_string: "{{ x_ui_inbounds_settings_dict | to_json }}"
+    x_ui_inbounds_stream_settings_string: "{{ x_ui_inbounds_stream_settings_dict | to_json }}"
 
 - name: Construct final inbound payload (no clients)
   ansible.builtin.set_fact:
-    inbound_payload:
+    x_ui_inbounds_payload:
       remark: "{{ inbound_item.name }}"
       enable: true
       protocol: "{{ inbound_protocol }}"
       listen: "{{ ansible_host }}"
-      port: "{{ inbound_port | int }}"
+      port: "{{ x_ui_inbounds_inbound_port | int }}"
       expiryTime: 0
       total: 0
       up: 0
       down: 0
-      settings: "{{ settings_string }}"
-      streamSettings: "{{ streamSettings_string }}"
+      settings: "{{ x_ui_inbounds_settings_string }}"
+      streamSettings: "{{ x_ui_inbounds_stream_settings_string }}"
 
 # ===========================================
 #   ADD OR UPDATE INBOUND
 # ===========================================
 - name: Add new inbound via 3X-UI API
   ansible.builtin.uri:
-    url: "{{ ui_panel_url }}/panel/api/inbounds/add"
+    url: "{{ x_ui_inbounds_panel_url }}/panel/api/inbounds/add"
     method: POST
     headers:
       Cookie: "{{ session_cookie }}"
       Content-Type: "application/json"
-    body: "{{ inbound_payload | to_json }}"
+    body: "{{ x_ui_inbounds_payload | to_json }}"
     body_format: json
     status_code: 200
-  register: add_inbound_response
-  when: existing_inbound is none
+  register: x_ui_inbounds_add_response
+  when: x_ui_inbounds_existing_inbound is none
   failed_when: >-
-    add_inbound_response.json is not defined or
-    add_inbound_response.json.success != true
+    x_ui_inbounds_add_response.json is not defined or
+    x_ui_inbounds_add_response.json.success != true
 
 - name: Allow the selected port through UFW (for new inbound)
   community.general.ufw:
     rule: allow
-    port: "{{ port_finder.stdout | trim }}"
+    port: "{{ x_ui_inbounds_port_finder.stdout | trim }}"
     proto: tcp
   become: true
-  when: existing_inbound is none
+  when: x_ui_inbounds_existing_inbound is none
 
 - name: Update existing inbound via 3X-UI API
   ansible.builtin.uri:
-    url: "{{ ui_panel_url }}/panel/api/inbounds/update/{{ existing_inbound.id }}"
+    url: "{{ x_ui_inbounds_panel_url }}/panel/api/inbounds/update/{{ x_ui_inbounds_existing_inbound.id }}"
     method: POST
     headers:
       Cookie: "{{ session_cookie }}"
       Content-Type: "application/json"
-    body: "{{ inbound_payload | to_json }}"
+    body: "{{ x_ui_inbounds_payload | to_json }}"
     body_format: json
     status_code: 200
-  register: update_inbound_response
-  when: existing_inbound is not none
+  register: x_ui_inbounds_update_response
+  when: x_ui_inbounds_existing_inbound is not none
   failed_when: >-
-    update_inbound_response.json is not defined or
-    update_inbound_response.json.success != true
+    x_ui_inbounds_update_response.json is not defined or
+    x_ui_inbounds_update_response.json.success != true
 
-- name: Set inbound_id fact for later client operations
+- name: Set x_ui_inbounds_id fact for later client operations
   ansible.builtin.set_fact:
-    inbound_id: >-
+    x_ui_inbounds_id: >-
       {{
-        (existing_inbound.id if existing_inbound is not none
-         else add_inbound_response.json.obj.id)
+        (x_ui_inbounds_existing_inbound.id if x_ui_inbounds_existing_inbound is not none
+         else x_ui_inbounds_add_response.json.obj.id)
       }}
 
 # ===========================================
@@ -171,29 +172,29 @@
 # ===========================================
 - name: Get current inbound details (to fetch existing clients)
   ansible.builtin.uri:
-    url: "{{ ui_panel_url }}/panel/api/inbounds/get/{{ inbound_id }}"
+    url: "{{ x_ui_inbounds_panel_url }}/panel/api/inbounds/get/{{ x_ui_inbounds_id }}"
     method: GET
     headers:
       Cookie: "{{ session_cookie }}"
     status_code: 200
-  register: inbound_details_response
+  register: x_ui_inbounds_details_response
   failed_when: >-
-    inbound_details_response.json is not defined or
-    inbound_details_response.json.success != true
+    x_ui_inbounds_details_response.json is not defined or
+    x_ui_inbounds_details_response.json.success != true
 
 - name: Extract existing clients list
   ansible.builtin.set_fact:
-    existing_clients: >-
+    x_ui_inbounds_existing_clients: >-
       {{
-        (inbound_details_response.json.obj.settings | from_json).clients
+        (x_ui_inbounds_details_response.json.obj.settings | from_json).clients
         | default([])
       }}
 
 - name: Build a dictionary mapping email -> existing client
   ansible.builtin.set_fact:
-    existing_clients_by_email: >-
+    x_ui_inbounds_existing_clients_by_email: >-
       {{
-        dict(existing_clients | map(attribute='email') | zip(existing_clients))
+        dict(x_ui_inbounds_existing_clients | map(attribute='email') | zip(x_ui_inbounds_existing_clients))
       }}
 
 # ===========================================
@@ -201,9 +202,9 @@
 # ===========================================
 - name: Generate a random UUID for each client if not provided
   ansible.builtin.set_fact:
-    generated_uuids: >-
+    x_ui_inbounds_generated_uuids: >-
       {{
-        generated_uuids | default({}) | combine({
+        x_ui_inbounds_generated_uuids | default({}) | combine({
           item.name: item.uuid | default(lookup('pipe', 'uuidgen'))
         })
       }}
@@ -217,29 +218,29 @@
 # ===========================================
 - name: Get current inbound details (to fetch existing clients)
   ansible.builtin.uri:
-    url: "{{ ui_panel_url }}/panel/api/inbounds/get/{{ inbound_id }}"
+    url: "{{ x_ui_inbounds_panel_url }}/panel/api/inbounds/get/{{ x_ui_inbounds_id }}"
     method: GET
     headers:
       Cookie: "{{ session_cookie }}"
     status_code: 200
-  register: inbound_details_response
+  register: x_ui_inbounds_details_response
   failed_when: >-
-    inbound_details_response.json is not defined or
-    inbound_details_response.json.success != true
+    x_ui_inbounds_details_response.json is not defined or
+    x_ui_inbounds_details_response.json.success != true
 
 - name: Extract existing clients list (parse settings JSON string)
   ansible.builtin.set_fact:
-    existing_clients: >-
+    x_ui_inbounds_existing_clients: >-
       {{
-        (inbound_details_response.json.obj.settings | from_json).clients
+        (x_ui_inbounds_details_response.json.obj.settings | from_json).clients
         | default([])
       }}
 
 - name: Build a dictionary mapping email -> existing client
   ansible.builtin.set_fact:
-    existing_clients_by_email: >-
+    x_ui_inbounds_existing_clients_by_email: >-
       {{
-        dict(existing_clients | map(attribute='email') | zip(existing_clients))
+        dict(x_ui_inbounds_existing_clients | map(attribute='email') | zip(x_ui_inbounds_existing_clients))
       }}
 
 # ===========================================
@@ -247,9 +248,9 @@
 # ===========================================
 - name: Generate a random UUID for each client if not provided
   ansible.builtin.set_fact:
-    generated_uuids: >-
+    x_ui_inbounds_generated_uuids: >-
       {{
-        generated_uuids | default({}) | combine({
+        x_ui_inbounds_generated_uuids | default({}) | combine({
           item.name: item.uuid | default(lookup('pipe', 'uuidgen'))
         })
       }}

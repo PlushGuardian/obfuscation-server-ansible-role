@@ -18,33 +18,33 @@
       echo "ERROR: Xray binary not found" >&2
       exit 1
     fi
-  register: xray_path_result
+  register: x_ui_inbounds_xray_path_result
   changed_when: false
-  failed_when: xray_path_result.rc != 0
+  failed_when: x_ui_inbounds_xray_path_result.rc != 0
 
-- name: Set xray_bin fact
+- name: Set x_ui_inbounds_xray_bin fact
   ansible.builtin.set_fact:
-    xray_bin: "{{ xray_path_result.stdout_lines[0] }}"
+    x_ui_inbounds_xray_bin: "{{ x_ui_inbounds_xray_path_result.stdout_lines[0] }}"
 
 - name: Generate Reality keys on the remote server (for new inbound)
-  ansible.builtin.shell: "{{ xray_bin }} x25519"
-  register: keygen_output
+  ansible.builtin.command: "{{ x_ui_inbounds_xray_bin }} x25519"
+  register: x_ui_inbounds_keygen_output
   changed_when: false
   when: existing_inbound is none
 
 - name: Parse and set key variables (use existing keys if inbound exists)
   ansible.builtin.set_fact:
-    reality_private_key: >-
+    x_ui_inbounds_reality_private_key: >-
       {{
         (existing_streamSettings.realitySettings.privateKey
          if existing_inbound is not none
-         else keygen_output.stdout | regex_search('(?im)^\s*(?:private\s*key|privatekey):\s*(.*)$', '\1') | first)
+         else x_ui_inbounds_keygen_output.stdout | regex_search('(?im)^\s*(?:private\s*key|privatekey):\s*(.*)$', '\1') | first)
       }}
-    reality_public_key: >-
+    x_ui_inbounds_reality_public_key: >-
       {{
         (existing_streamSettings.realitySettings.settings.publicKey
          if existing_inbound is not none
-         else keygen_output.stdout | regex_search('(?im)^\s*(?:public\s*key|password):\s*(.*)$', '\1') | first)
+         else x_ui_inbounds_keygen_output.stdout | regex_search('(?im)^\s*(?:public\s*key|password):\s*(.*)$', '\1') | first)
       }}
 
 # ===========================================
@@ -52,18 +52,18 @@
 # ===========================================
 - name: Generate shortId on the control node (for new inbound)
   ansible.builtin.set_fact:
-    reality_short_ids: "{{ lookup('pipe', 'openssl rand -hex 8') }}"
+    x_ui_inbounds_reality_short_ids: "{{ lookup('pipe', 'openssl rand -hex 8') }}"
   delegate_to: localhost
   when: existing_inbound is none
 
 - name: Use existing shortIds if inbound exists
   ansible.builtin.set_fact:
-    reality_short_ids: "{{ existing_streamSettings.realitySettings.shortIds[0] }}"
+    x_ui_inbounds_reality_short_ids: "{{ existing_streamSettings.realitySettings.shortIds[0] }}"
   when: existing_inbound is not none
 
-- name: Ensure reality_short_ids is a list
+- name: Ensure x_ui_inbounds_reality_short_ids is a list
   ansible.builtin.set_fact:
-    reality_short_ids: [ "{{ reality_short_ids }}" ]
+    x_ui_inbounds_reality_short_ids: ["{{ x_ui_inbounds_reality_short_ids }}"]
 
 # # ===========================================
 # #   DOWNLOAD REALITLSCANNER
@@ -86,9 +86,13 @@
 #   ansible.builtin.set_fact:
 #     reality_scanner_arch: "{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
 
+# - name: Set download path based on architecture
+#   ansible.builtin.set_fact:
+#     reality_scanner_download_path: "v{{ reality_scanner_version }}/RealiTLScanner-linux-{{ 'arm64' if reality_scanner_arch == 'arm64' else '64' }}"
+
 # - name: Set download URL based on architecture
 #   ansible.builtin.set_fact:
-#     reality_scanner_download_url: "https://github.com/XTLS/RealiTLScanner/releases/download/v{{ reality_scanner_version }}/RealiTLScanner-linux-{{ 'arm64' if reality_scanner_arch == 'arm64' else '64' }}"
+#     reality_scanner_download_url: "https://github.com/XTLS/RealiTLScanner/releases/download/{{ reality_scanner_download_path }}"
 
 # - name: Download RealiTLScanner binary
 #   ansible.builtin.get_url:
@@ -125,7 +129,8 @@
 
 # - name: Run RealiTLScanner for this host
 #   ansible.builtin.shell: |
-#     "{{ reality_scanner_path }}" -addr "{{ selected_sni }}" -port 443 -thread 10 -timeout 5 -out "{{ reality_scanner_output_dir }}/{{ inventory_hostname }}_dest.csv"
+#     "{{ reality_scanner_path }}" -addr "{{ selected_sni }}" -port 443 -thread 10 -timeout 5 \
+#     -out "{{ reality_scanner_output_dir }}/{{ inventory_hostname }}_dest.csv"
 #   args:
 #     creates: "{{ reality_scanner_output_dir }}/{{ inventory_hostname }}_dest.csv"
 #   run_once: true
@@ -136,7 +141,7 @@
 #     src: "{{ reality_scanner_output_dir }}/{{ inventory_hostname }}_dest.csv"
 #   register: slurped_csv
 #   run_once: true
-#   ignore_errors: yes
+#   ignore_errors: true
 
 # - name: Extract best dest from scan results
 #   ansible.builtin.set_fact:

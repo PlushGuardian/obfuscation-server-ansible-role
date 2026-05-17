@@ -3,16 +3,18 @@
   ansible.builtin.file:
     path: /etc/vmagent
     state: directory
+    mode: "0755"
   become: true
 
 - name: Configure vmagent to scrape node_exporter and write to central VictoriaMetrics
-  template:
+  ansible.builtin.template:
     src: "{{ role_path }}/templates/vmagent_config.yaml.j2"
     dest: /etc/vmagent/scrape.yml
+    mode: "0644"
   become: true
 
 - name: Run vmagent container
-  docker_container:
+  community.docker.docker_container:
     name: vmagent
     image: victoriametrics/vmagent:latest
     state: started

@@ -1,0 +1,63 @@
+- name: Start 3x‑UI panel service
+  ansible.builtin.command:
+    cmd: x-ui start
+  become: true
+  changed_when: true
+
+- name: Retrieve 3x‑UI configuration settings
+  ansible.builtin.shell: |
+    set -o pipefail
+    echo "n" | x-ui settings
+  become: true
+  register: x_ui_inbounds_settings_output
+  changed_when: false
+
+- name: Extract the webBasePath value
+  ansible.builtin.set_fact:
+    x_ui_inbounds_panel_path: >-
+      {{
+        (x_ui_inbounds_settings_output.stdout
+        | regex_search('webBasePath:\s*(\S+)', '\1')
+        | first
+        | default('/'))
+        | regex_replace('^/+|/+$', '')
+      }}
+  when: x_ui_inbounds_settings_output is succeeded
+
+- name: Build panel URL variable
+  ansible.builtin.set_fact:
+    x_ui_inbounds_panel_url: "http://localhost:{{ x_ui_panel_port }}/{{ x_ui_inbounds_panel_path }}"
+
+- name: Login to 3x‑UI API and obtain session cookie
+  ansible.builtin.uri:
+    url: "{{ x_ui_inbounds_panel_url }}/login"
+    method: POST
+    body:
+      username: "{{ x_ui_panel_username }}"
+      password: "{{ x_ui_panel_password }}"
+    body_format: json
+    status_code: 200
+  register: x_ui_inbounds_login_response
+  # no_log: true
+
+- name: Fail if login to 3x‑UI API was unsuccessful
+  ansible.builtin.fail:
+    msg: >-
+      Login failed for user {{ x_ui_panel_username }}.
+      API returned status {{ x_ui_inbounds_login_response.status }}.
+      Message: {{ x_ui_inbounds_login_response.json.msg | default('(no message)') }}
+  when: >
+    x_ui_inbounds_login_response.status is defined
+    and (x_ui_inbounds_login_response.status != 200
+         or (x_ui_inbounds_login_response.json is defined
+             and not x_ui_inbounds_login_response.json.get('success', true)))
+
+- name: Extract session cookie
+  ansible.builtin.set_fact:
+    x_ui_inbounds_session_cookie: "{{ x_ui_inbounds_login_response.set_cookie | regex_replace(';.*', '') }}"
+
+- name: Add inbounds from host variables
+  ansible.builtin.include_tasks: "{{ role_path }}/tasks/add_inbound.yaml"
+  loop: "{{ inbounds }}"
+  loop_control:
+    loop_var: inbound_item

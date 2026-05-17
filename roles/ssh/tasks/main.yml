@@ -1,13 +1,13 @@
 ---
 - name: Fail if password authentication is used for the Ansible connection
-  fail:
+  ansible.builtin.fail:
     msg: >
       This role requires SSH key authentication.
       Please use '--private-key' or ssh-agent and remove 'ansible_password' from your inventory/vars.
   when: ansible_password is defined
 
 - name: Fail if running as root (root SSH will be disabled)
-  fail:
+  ansible.builtin.fail:
     msg: >
       This role disables SSH access for root.
       Please run as a non‑root user with sudo privileges.
@@ -18,45 +18,45 @@
 # ------------------------------------------------------------------
 
 - name: Find all override files in sshd_config.d
-  find:
+  ansible.builtin.find:
     paths: /etc/ssh/sshd_config.d
     patterns: "*.conf"
-  register: override_files
+  register: ssh_override_files
 
 - name: Comment out PasswordAuthentication, PermitRootLogin, and PermitEmptyPasswords in all override files
-  replace:
+  ansible.builtin.replace:
     path: "{{ item.path }}"
     regexp: '^(?!\s*#)(\s*(PasswordAuthentication|PermitRootLogin|PermitEmptyPasswords)\s+.*)$'
     replace: '# \1'
-  loop: "{{ override_files.files }}"
+  loop: "{{ ssh_override_files.files }}"
   become: true
 
 - name: Disable password authentication for all users
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?PasswordAuthentication'
     line: 'PasswordAuthentication no'
     state: present
-    backup: yes
-  notify: restart ssh
+    backup: true
+  notify: Restart ssh
   become: true
 
 - name: Forbid empty passwords
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?PermitEmptyPasswords'
     line: 'PermitEmptyPasswords no'
     state: present
-    backup: yes
-  notify: restart ssh
+    backup: true
+  notify: Restart ssh
   become: true
 
 - name: Disable SSH access for root
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?PermitRootLogin'
     line: 'PermitRootLogin no'
     state: present
-    backup: yes
-  notify: restart ssh
+    backup: true
+  notify: Restart ssh
   become: true

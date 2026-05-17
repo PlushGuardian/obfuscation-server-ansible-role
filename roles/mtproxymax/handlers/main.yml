@@ -1,6 +1,6 @@
 ---
-  - name: Restart mtproxymax
-    systemd:
-      name: mtproxymax
-      state: restarted
-    become: true
+- name: Restart mtproxymax
+  ansible.builtin.systemd:
+    name: mtproxymax
+    state: restarted
+  become: true

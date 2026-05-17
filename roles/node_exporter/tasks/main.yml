@@ -1,6 +1,6 @@
 ---
 - name: Run node_exporter container
-  docker_container:
+  community.docker.docker_container:
     name: node_exporter
     image: quay.io/prometheus/node-exporter:latest
     state: started

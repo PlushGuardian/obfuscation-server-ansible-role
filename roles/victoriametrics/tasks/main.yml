@@ -1,6 +1,6 @@
 ---
 - name: Run VictoriaMetrics container
-  docker_container:
+  community.docker.docker_container:
     name: victoria-metrics
     image: victoriametrics/victoria-metrics:latest
     state: started
@@ -57,4 +57,4 @@
 #       systemd:
 #         name: vmbackup.timer
 #         state: started
-#         enabled: yes
+#         enabled: true

@@ -1,11 +1,11 @@
 - name: Update apt cache
-  apt:
-    update_cache: yes
+  ansible.builtin.apt:
+    update_cache: true
     cache_valid_time: 3600
   become: true
 
 - name: Install required system packages
-  apt:
+  ansible.builtin.apt:
     name:
       - git
       - curl
@@ -16,23 +16,22 @@
   become: true
 
 - name: Open firewall port for MTProto
-  ufw:
+  community.general.ufw:
     rule: allow
     port: "{{ mtproxy_port }}"
     proto: tcp
   become: true
 
-# Determine private IP (the interface address Ansible connects to)
-- name: Set private_ip fact
+- name: Set mtproxymax_private_ip fact
   ansible.builtin.set_fact:
-    private_ip: "{{ ansible_default_ipv4.address }}"
+    mtproxymax_private_ip: "{{ ansible_default_ipv4.address }}"
 
 - name: Display IP configuration
-  debug:
+  ansible.builtin.debug:
     msg:
       - "Public IP (from inventory): {{ ansible_host }}"
-      - "Private IP (local interface): {{ private_ip }}"
-      - "NAT will be configured: {{ ansible_host != private_ip }}"
+      - "Private IP (local interface): {{ mtproxymax_private_ip }}"
+      - "NAT will be configured: {{ ansible_host != mtproxymax_private_ip }}"
 
 
 ## Add docker installation
@@ -42,13 +41,13 @@
 # ================================================
 
 - name: Check if MTProxyMax is already installed
-  command: which mtproxymax
+  ansible.builtin.command: which mtproxymax
   register: mtproxymax_check
   failed_when: false
   changed_when: false
 
 - name: Download MTProxyMax installer
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ mtproxymax_installer_url }}"
     dest: /tmp/mtproxymax-install.sh
     mode: '0755'
@@ -56,7 +55,7 @@
   when: mtproxymax_check.rc != 0
 
 - name: Install MTProxyMax non‑interactively using a wrapper script
-  script: run_installation_interactive.sh
+  ansible.builtin.script: run_installation_interactive.sh
   become: true
   environment:
     MTPROXY_PORT: "{{ mtproxy_port }}"
@@ -73,31 +72,32 @@
 # 3. NAT Configuration (Idempotent & Dynamic)
 # ================================================
 - name: Get current NAT configuration from MTProxyMax
-  command: mtproxymax config get nat
-  register: current_nat_config
+  ansible.builtin.command: mtproxymax config get nat
+  register: mtproxymax_current_nat_config
   changed_when: false
   failed_when: false
 
 - name: Parse current NAT value
   ansible.builtin.set_fact:
-    current_nat_value: "{{ current_nat_config.stdout | trim if current_nat_config.stdout != '' else '' }}"
+    mtproxymax_current_nat_value: "{{ mtproxymax_current_nat_config.stdout | trim if mtproxymax_current_nat_config.stdout != '' else '' }}"
 
 - name: Determine desired NAT configuration
   ansible.builtin.set_fact:
-    desired_nat_value: "{{ private_ip + ':' + ansible_host if ansible_host != private_ip else '' }}"
+    mtproxymax_desired_nat_value: "{{ mtproxymax_private_ip + ':' + ansible_host if ansible_host != mtproxymax_private_ip else '' }}"
 
 - name: Update NAT configuration if needed
-  command: "mtproxymax config set nat {{ desired_nat_value }}"
+  ansible.builtin.command: "mtproxymax config set nat {{ mtproxymax_desired_nat_value }}"
   when:
-    - desired_nat_value != current_nat_value
-  notify: restart mtproxymax
+    - mtproxymax_desired_nat_value != mtproxymax_current_nat_value
+  changed_when: true
+  notify: Restart mtproxymax
   become: true
 
 # ================================================
 # 4. Configure Automatic Updates (Cron Job)
 # ================================================
 - name: Setup daily cron job to update proxy-multi.conf
-  cron:
+  ansible.builtin.cron:
     name: "Update Telegram MTProto config"
     minute: "{{ mtproxy_config_update_minute }}"
     hour: "{{ mtproxy_config_update_hour }}"
@@ -110,17 +110,17 @@
 # 5. Declarative User Management with MTProxyMax CLI
 # ================================================
 - name: Ensure all users exist (create if missing, ignore existing)
-  command: "mtproxymax secret add {{ item.name }}"
+  ansible.builtin.command: "mtproxymax secret add {{ item.name }}"
   loop: "{{ mtproxy_users }}"
-  register: user_add_result
-  changed_when: "'created' in user_add_result.stdout"   # Adjust based on actual success message
+  register: mtproxymax_user_add_result
+  changed_when: "'created' in mtproxymax_user_add_result.stdout"   # Adjust based on actual success message
   failed_when:
-    - user_add_result.rc != 0
-    - "'already exists' not in user_add_result.stderr"
+    - mtproxymax_user_add_result.rc != 0
+    - "'already exists' not in mtproxymax_user_add_result.stderr"
   become: true
 
 - name: Apply per-user limits
-  command: >
+  ansible.builtin.command: >
     mtproxymax secret setlimits {{ item.name }}
     {{ item.max_conns | default(0) }}
     {{ item.max_ips | default(0) }}
@@ -133,31 +133,32 @@
   become: true
 
 - name: Generate proxy links for users
-  command: "mtproxymax secret link {{ item.name }}"
+  ansible.builtin.command: "mtproxymax secret link {{ item.name }}"
   loop: "{{ mtproxy_users }}"
-  register: user_links
+  register: mtproxymax_user_links
   changed_when: false
   become: true
 
 - name: Save user links to local file
-  copy:
+  ansible.builtin.copy:
     content: |
-      {% for result in user_links.results %}
+      {% for result in mtproxymax_user_links.results %}
       User: {{ result.item.name }} | Link: {{ result.stdout }}
       {% endfor %}
     dest: "./mtproxy_user_links_{{ inventory_hostname }}.txt"
+    mode: '0600'
   delegate_to: localhost
   run_once: true
-  when: user_links.results is defined and user_links.results | length > 0
+  when: mtproxymax_user_links.results is defined and mtproxymax_user_links.results | length > 0
 
 
 # # ================================================
 # # 6. Final Service Management
 # # ================================================
 - name: Ensure MTProxyMax service is running and enabled
-  systemd:
+  ansible.builtin.systemd:
     name: mtproxymax
     state: started
-    enabled: yes
-    daemon_reload: yes
+    enabled: true
+    daemon_reload: true
   become: true

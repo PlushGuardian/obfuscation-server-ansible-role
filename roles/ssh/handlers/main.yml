@@ -1,8 +1,7 @@
 ---
-
-- name: restart ssh
-  systemd:
+- name: Restart ssh
+  ansible.builtin.systemd:
     name: ssh
-    daemon_reload: yes
+    daemon_reload: true
     state: restarted
   become: true

@@ -1,28 +1,27 @@
-# tasks/main.yml
 ---
 # ------------------------------------------------------------------
 #  REMOVE STALE ADMINS
 # ------------------------------------------------------------------
 - name: Get current members of sudo group
-  getent:
+  ansible.builtin.getent:
     database: group
     key: sudo
-  register: sudo_group
+  register: admin_users_sudo_group
   become: true
 
 - name: Compute users to remove (sudo group members not in admin list)
   ansible.builtin.set_fact:
-    current_sudo_users: "{{ sudo_group.ansible_facts.getent_group.sudo[2].split(',') | default([]) }}"
-    admin_usernames: "{{ admin_users | map(attribute='username') | list }}"
+    admin_users_current_admins: "{{ admin_users_sudo_group.ansible_facts.getent_group.sudo[2].split(',') | default([]) }}"
+    admin_users_new_admins: "{{ admin_users | map(attribute='username') | list }}"
 
 - name: Remove stale admin users
-  user:
+  ansible.builtin.user:
     name: "{{ item }}"
     state: absent
-    remove: yes
-  loop: "{{ current_sudo_users }}"
+    remove: true
+  loop: "{{ admin_users_current_admins }}"
   when:
-    - item not in admin_usernames
+    - item not in admin_users_new_admins
     - item != 'root'
     - item != ansible_user
   become: true
@@ -31,23 +30,23 @@
 #  ADD NEW ADMINS
 # ------------------------------------------------------------------
 - name: Ensure admin users exist
-  user:
+  ansible.builtin.user:
     name: "{{ item.username }}"
     state: present
     groups: sudo
-    append: yes
+    append: true
     shell: /bin/bash
-    create_home: yes
+    create_home: true
   loop: "{{ admin_users }}"
   become: true
 
 - name: Set authorized SSH keys for admin users
   ansible.posix.authorized_key:
     user: "{{ item.username }}"
-    key: "{{ item.ssh_key }}"
+    key: "{{ item.ssh_key | replace('\n', '') }}"
     state: present
-    exclusive: yes
-  loop: "{{ admin_users }}"
+    exclusive: true
+  loop: "{{ admin_users_new_admins }}"
   become: true
 
 - name: Allow passwordless sudo for admin group

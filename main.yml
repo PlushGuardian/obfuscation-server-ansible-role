@@ -36,8 +36,8 @@
     - mtproxymax
 
 - name: Install 3X-UI and configure inbounds
-  hosts: threexui_hosts
+  hosts: x_ui_hosts
   remote_user: ansible
   roles:
-    - 3xui
-    - inbounds
+    - x_ui
+    - x_ui_inbounds
