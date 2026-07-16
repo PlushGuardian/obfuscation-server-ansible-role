@@ -3,6 +3,8 @@
     update_cache: true
     cache_valid_time: 3600
   become: true
+  tasks:
+    - mproxymax
 
 - name: Install required system packages
   ansible.builtin.apt:
@@ -14,6 +16,8 @@
       - zlib1g-dev
     state: present
   become: true
+  tasks:
+    - mproxymax
 
 - name: Open firewall port for MTProto
   community.general.ufw:
@@ -21,10 +25,16 @@
     port: "{{ mtproxy_port }}"
     proto: tcp
   become: true
+  tasks:
+    - mproxymax
+    - firewall
+    - security
 
 - name: Set mtproxymax_private_ip fact
   ansible.builtin.set_fact:
     mtproxymax_private_ip: "{{ ansible_default_ipv4.address }}"
+  tasks:
+    - mproxymax
 
 - name: Display IP configuration
   ansible.builtin.debug:
@@ -32,9 +42,8 @@
       - "Public IP (from inventory): {{ ansible_host }}"
       - "Private IP (local interface): {{ mtproxymax_private_ip }}"
       - "NAT will be configured: {{ ansible_host != mtproxymax_private_ip }}"
-
-
-## Add docker installation
+  tasks:
+    - mproxymax
 
 # ================================================
 # 2. Install MTProxyMax
@@ -45,6 +54,8 @@
   register: mtproxymax_check
   failed_when: false
   changed_when: false
+  tasks:
+    - mproxymax
 
 - name: Download MTProxyMax installer
   ansible.builtin.get_url:
@@ -53,8 +64,10 @@
     mode: '0755'
   become: true
   when: mtproxymax_check.rc != 0
+  tasks:
+    - mproxymax
 
-- name: Install MTProxyMax non‑interactively using a wrapper script
+- name: Install MTProxyMax non-interactively using a wrapper script
   ansible.builtin.script: run_installation_interactive.sh
   become: true
   environment:
@@ -67,6 +80,8 @@
     executable: bash
   timeout: 600
   when: mtproxymax_check.rc != 0
+  tasks:
+    - mproxymax
 
 # ================================================
 # 3. NAT Configuration (Idempotent & Dynamic)
@@ -76,14 +91,20 @@
   register: mtproxymax_current_nat_config
   changed_when: false
   failed_when: false
+  tasks:
+    - mproxymax
 
 - name: Parse current NAT value
   ansible.builtin.set_fact:
     mtproxymax_current_nat_value: "{{ mtproxymax_current_nat_config.stdout | trim if mtproxymax_current_nat_config.stdout != '' else '' }}"
+  tasks:
+    - mproxymax
 
 - name: Determine desired NAT configuration
   ansible.builtin.set_fact:
     mtproxymax_desired_nat_value: "{{ mtproxymax_private_ip + ':' + ansible_host if ansible_host != mtproxymax_private_ip else '' }}"
+  tasks:
+    - mproxymax
 
 - name: Update NAT configuration if needed
   ansible.builtin.command: "mtproxymax config set nat {{ mtproxymax_desired_nat_value }}"
@@ -92,7 +113,8 @@
   changed_when: true
   notify: Restart mtproxymax
   become: true
-
+  tasks:
+    - mproxymax
 # ================================================
 # 4. Configure Automatic Updates (Cron Job)
 # ================================================
@@ -105,51 +127,8 @@
     user: root
     state: present
   become: true
-
-# ================================================
-# 5. Declarative User Management with MTProxyMax CLI
-# ================================================
-- name: Ensure all users exist (create if missing, ignore existing)
-  ansible.builtin.command: "mtproxymax secret add {{ item.name }}"
-  loop: "{{ mtproxy_users }}"
-  register: mtproxymax_user_add_result
-  changed_when: "'created' in mtproxymax_user_add_result.stdout"   # Adjust based on actual success message
-  failed_when:
-    - mtproxymax_user_add_result.rc != 0
-    - "'already exists' not in mtproxymax_user_add_result.stderr"
-  become: true
-
-- name: Apply per-user limits
-  ansible.builtin.command: >
-    mtproxymax secret setlimits {{ item.name }}
-    {{ item.max_conns | default(0) }}
-    {{ item.max_ips | default(0) }}
-    {{ item.quota | default('0') }}
-    {{ item.expires | default('') }}
-  loop: "{{ mtproxy_users }}"
-  when:
-    - item.max_conns is defined or item.max_ips is defined or item.quota is defined or item.expires is defined
-  changed_when: true
-  become: true
-
-- name: Generate proxy links for users
-  ansible.builtin.command: "mtproxymax secret link {{ item.name }}"
-  loop: "{{ mtproxy_users }}"
-  register: mtproxymax_user_links
-  changed_when: false
-  become: true
-
-- name: Save user links to local file
-  ansible.builtin.copy:
-    content: |
-      {% for result in mtproxymax_user_links.results %}
-      User: {{ result.item.name }} | Link: {{ result.stdout }}
-      {% endfor %}
-    dest: "./mtproxy_user_links_{{ inventory_hostname }}.txt"
-    mode: '0600'
-  delegate_to: localhost
-  run_once: true
-  when: mtproxymax_user_links.results is defined and mtproxymax_user_links.results | length > 0
+  tasks:
+    - mproxymax
 
 
 # # ================================================
@@ -162,3 +141,5 @@
     enabled: true
     daemon_reload: true
   become: true
+  tasks:
+    - mproxymax

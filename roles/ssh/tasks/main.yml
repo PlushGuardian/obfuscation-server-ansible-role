@@ -5,6 +5,9 @@
       This role requires SSH key authentication.
       Please use '--private-key' or ssh-agent and remove 'ansible_password' from your inventory/vars.
   when: ansible_password is defined
+  tasks:
+    - ssh
+    - security
 
 - name: Fail if running as root (root SSH will be disabled)
   ansible.builtin.fail:
@@ -12,6 +15,9 @@
       This role disables SSH access for root.
       Please run as a non‑root user with sudo privileges.
   when: ansible_user == 'root'
+  tasks:
+    - ssh
+    - security
 
 # ------------------------------------------------------------------
 #  Security hardening: disable password auth and root SSH login
@@ -22,6 +28,9 @@
     paths: /etc/ssh/sshd_config.d
     patterns: "*.conf"
   register: ssh_override_files
+  tasks:
+    - ssh
+    - security
 
 - name: Comment out PasswordAuthentication, PermitRootLogin, and PermitEmptyPasswords in all override files
   ansible.builtin.replace:
@@ -30,6 +39,9 @@
     replace: '# \1'
   loop: "{{ ssh_override_files.files }}"
   become: true
+  tasks:
+    - ssh
+    - security
 
 - name: Disable password authentication for all users
   ansible.builtin.lineinfile:
@@ -40,6 +52,9 @@
     backup: true
   notify: Restart ssh
   become: true
+  tasks:
+    - ssh
+    - security
 
 - name: Forbid empty passwords
   ansible.builtin.lineinfile:
@@ -50,6 +65,9 @@
     backup: true
   notify: Restart ssh
   become: true
+  tasks:
+    - ssh
+    - security
 
 - name: Disable SSH access for root
   ansible.builtin.lineinfile:
@@ -60,3 +78,6 @@
     backup: true
   notify: Restart ssh
   become: true
+  tasks:
+    - ssh
+    - security

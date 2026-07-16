@@ -6,6 +6,7 @@
   changed_when: false
   tags:
     - firewall
+    - security
 
 - name: Block ICMP echo-request (ping) in the INPUT chain
   ansible.builtin.replace:
@@ -18,6 +19,7 @@
   notify: reload ufw
   tags:
     - firewall
+    - security
 
 - name: Block ICMP echo-request (ping) in the FORWARD chain
   ansible.builtin.replace:
@@ -30,6 +32,7 @@
   notify: reload ufw
   tags:
     - firewall
+    - security
 
 - name: Allow traffic on SSH / Ansible port
   community.general.ufw:
@@ -39,6 +42,7 @@
   become: true
   tags:
     - firewall
+    - security
 
 - name: Ensure UFW is enabled
   community.general.ufw:
@@ -46,3 +50,4 @@
   become: true
   tags:
     - firewall
+    - security

@@ -5,6 +5,9 @@
     state: directory
     mode: "0755"
   become: true
+  tasks:
+    - vmagent
+    - monitoring
 
 - name: Configure vmagent to scrape node_exporter and write to central VictoriaMetrics
   ansible.builtin.template:
@@ -12,6 +15,9 @@
     dest: /etc/vmagent/scrape.yml
     mode: "0644"
   become: true
+  tasks:
+    - vmagent
+    - monitoring
 
 - name: Run vmagent container
   community.docker.docker_container:
@@ -30,3 +36,6 @@
       - '-httpListenAddr=:{{ vmagent_port }}'
       - '-remoteWrite.label=node={{ inventory_hostname }}'
   become: true
+  tasks:
+    - vmagent
+    - monitoring

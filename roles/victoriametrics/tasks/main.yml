@@ -16,6 +16,9 @@
     volumes:
       - /var/lib/victoria-metrics:/storage
   become: true
+  tasks:
+    - victoriametrics
+    - monitoring_server
 
 # - name: Install systemd timer for vmbackup
 #   block:

@@ -13,3 +13,6 @@
     echo ""                                      # skip IPv6 address
     echo "${UI_PANEL_ACME_PORT}"                 # ACME port
 } | bash /tmp/install.sh
+
+
+

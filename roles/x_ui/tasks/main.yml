@@ -9,29 +9,42 @@
     - /usr/bin/x-ui         # Management script
   register: x_ui_files
   when: not x_ui_installed_skipped | default(false)
+  tasks:
+    - x_ui
 
 - name: Determine if 3x-ui is installed
   ansible.builtin.set_fact:
     x_ui_installed: "{{ x_ui_files.results | selectattr('stat.exists', 'equalto', true) | list | length > 0 }}"
+  tasks:
+    - x_ui
 
-- name: Download 3x-ui install script
-  ansible.builtin.get_url:
-    url: https://raw.githubusercontent.com/mhsanaei/3x-ui/v2.8.11/install.sh
-    dest: /tmp/install.sh
+- name: Download 3x‑UI install script
+  get_url:
+    url: https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh
+    dest: /tmp/install_3xui.sh
     mode: '0755'
-  when: not x_ui_installed
+    # Optional: verify integrity with a known checksum (replace with actual SHA256)
+    # checksum: sha256:abcdef1234567890...
+  register: download_result
+  until: download_result is success
+  retries: 3
+  delay: 5
+  tasks:
+    - x_ui
 
-- name: Install 3x-ui non‑interactively using a wrapper script
-  ansible.builtin.script: run_installation_interactive.sh
-  become: true
+- name: Run 3x‑UI installer (non‑interactive, pinned version)
+  shell:
+    cmd: bash /tmp/install_3xui.sh {{ x_ui_version }}
+    creates: /usr/local/x-ui/bin/x-ui
   environment:
-    UI_PANEL_PORT: "{{ x_ui_panel_port }}"
-    UI_PANEL_ACME_PORT: "{{ x_ui_panel_acme_port }}"
-    TERM: linux   # helps some prompts behave as if interactive
-  args:
-    executable: bash
-  timeout: 600
-  when: not x_ui_installed
+    XUI_NONINTERACTIVE: "1"
+    XUI_ACME_HTTP_PORT: "80"
+    XUI_DOMAIN: "{{ domain | default('') }}"
+  register: install_result
+  failed_when: install_result.rc != 0 or ('ERROR' in install_result.stderr)
+  when: download_result is success
+  tasks:
+    - x_ui
 #  TODO add update to a certain version
 
 
@@ -40,8 +53,10 @@
     rule: allow
     port: "{{ x_ui_panel_acme_port }}"
   become: true
-  tags:
+  tasks:
+    - x_ui
     - firewall
+    - security
 
 - name: Allow traffic on 3X-UI panel port
   community.general.ufw:
@@ -49,8 +64,10 @@
     port: "{{ x_ui_panel_port }}"
     proto: tcp
   become: true
-  tags:
+  tasks:
+    - x_ui
     - firewall
+    - security
 
 
 # =========================================
@@ -67,3 +84,5 @@
   args:
     executable: bash
   timeout: 60
+  tasks:
+    - x_ui

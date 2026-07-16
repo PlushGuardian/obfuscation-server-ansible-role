@@ -8,11 +8,17 @@
     key: sudo
   register: admin_users_sudo_group
   become: true
+  tags:
+    - admin_users
+    - security
 
 - name: Compute users to remove (sudo group members not in admin list)
   ansible.builtin.set_fact:
     admin_users_current_admins: "{{ admin_users_sudo_group.ansible_facts.getent_group.sudo[2].split(',') | default([]) }}"
     admin_users_new_admins: "{{ admin_users | map(attribute='username') | list }}"
+  tags:
+    - admin_users
+    - security
 
 - name: Remove stale admin users
   ansible.builtin.user:
@@ -25,6 +31,9 @@
     - item != 'root'
     - item != ansible_user
   become: true
+  tags:
+    - admin_users
+    - security
 
 # ------------------------------------------------------------------
 #  ADD NEW ADMINS
@@ -39,6 +48,9 @@
     create_home: true
   loop: "{{ admin_users }}"
   become: true
+  tags:
+    - admin_users
+    - security
 
 - name: Set authorized SSH keys for admin users
   ansible.posix.authorized_key:
@@ -48,6 +60,9 @@
     exclusive: true
   loop: "{{ admin_users_new_admins }}"
   become: true
+  tags:
+    - admin_users
+    - security
 
 - name: Allow passwordless sudo for admin group
   ansible.builtin.copy:
@@ -56,3 +71,6 @@
     validate: visudo -cf %s
     mode: '0440'
   become: true
+  tags:
+    - admin_users
+    - security

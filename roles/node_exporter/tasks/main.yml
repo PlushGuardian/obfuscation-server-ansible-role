@@ -17,3 +17,6 @@
       - /sys:/host/sys:ro
       - /:/host/root:ro
   become: true
+  tasks:
+    - node_exporter
+    - monitoring
