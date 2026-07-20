@@ -1,0 +1,24 @@
+---
+# Install the ufw package if it isn't already present.
+firewall_ufw_install: true
+
+# Default UFW policies (defense in depth).
+firewall_default_incoming_policy: deny
+firewall_default_outgoing_policy: allow
+
+# ufw before.rules chains where ICMP echo-request (ping) should be dropped.
+firewall_block_icmp_chains:
+  - ufw-before-input
+  - ufw-before-forward
+
+firewall_before_rules_path: /etc/ufw/before.rules
+
+# Port used for SSH / Ansible connections. Falls back to ansible_port,
+# then to the conventional default of 22 if neither is set.
+firewall_ssh_port: "{{ ansible_port | default(22) }}"
+
+# Optional extra allow rules, e.g.:
+# firewall_extra_allow_rules:
+#   - { port: 80, proto: tcp }
+#   - { port: 443, proto: tcp }
+firewall_extra_allow_rules: []

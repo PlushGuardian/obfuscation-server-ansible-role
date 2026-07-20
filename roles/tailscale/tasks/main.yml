@@ -4,7 +4,7 @@
     url: https://tailscale.com/install.sh
     dest: /tmp/install-tailscale.sh
     mode: "0755"
-  tasks:
+  tags:
     - tailscale
     - monitoring
 
@@ -13,7 +13,7 @@
   args:
     creates: /usr/bin/tailscale
   become: true
-  tasks:
+  tags:
     - tailscale
     - monitoring
 
@@ -21,7 +21,7 @@
   ansible.builtin.command: "tailscale up --authkey {{ tailscale_auth_key }} --accept-routes"
   changed_when: false
   become: true
-  tasks:
+  tags:
     - tailscale
     - monitoring
 
@@ -30,13 +30,13 @@
   ansible.builtin.command: tailscale ip -4
   register: tailscale_ip_cmd
   changed_when: false
-  tasks:
+  tags:
     - tailscale
     - monitoring
 
 - name: Set fact for Tailscale IP
   ansible.builtin.set_fact:
     tailscale_ip: "{{ tailscale_ip_cmd.stdout }}"
-  tasks:
+  tags:
     - tailscale
     - monitoring

@@ -5,7 +5,7 @@
     state: directory
     mode: "0755"
   become: true
-  tasks:
+  tags:
     - vmagent
     - monitoring
 
@@ -15,7 +15,7 @@
     dest: /etc/vmagent/scrape.yml
     mode: "0644"
   become: true
-  tasks:
+  tags:
     - vmagent
     - monitoring
 
@@ -36,6 +36,6 @@
       - '-httpListenAddr=:{{ vmagent_port }}'
       - '-remoteWrite.label=node={{ inventory_hostname }}'
   become: true
-  tasks:
+  tags:
     - vmagent
     - monitoring
