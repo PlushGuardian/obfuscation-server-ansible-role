@@ -171,4 +171,3 @@
   when: x_ui_creds_changed
   tags:
     - x_ui
-    - security

@@ -1,4 +1,4 @@
-`
+
 ---
 - name: Update apt cache
   ansible.builtin.apt:
@@ -229,7 +229,7 @@
 
 # ================================================
 # 6. Final Service Management
-# ==============================================
+# ================================================
 
 - name: Ensure MTProxyMax service is running and enabled
   ansible.builtin.systemd:
@@ -239,4 +239,3 @@
     daemon_reload: true
   become: true
   tags: [mtproxymax]
-`
