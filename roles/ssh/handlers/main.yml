@@ -1,7 +1,11 @@
----
+# handlers/main.yml
+- name: Validate sshd configuration
+  ansible.builtin.command: sshd -t
+  changed_when: false
+  listen: Restart ssh
+
 - name: Restart ssh
-  ansible.builtin.systemd:
-    name: ssh
-    daemon_reload: true
+  ansible.builtin.service:
+    name: "{{ ssh_hardening_service_name }}"
     state: restarted
-  become: true
+  listen: Restart ssh
