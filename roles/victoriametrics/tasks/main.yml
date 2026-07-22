@@ -1,4 +1,22 @@
 ---
+- name: Validate VictoriaMetrics settings
+  tags: [victoriametrics, monitoring_server]
+  block:
+    - name: Fail if victoriametrics_listen_addr is empty
+      ansible.builtin.fail:
+        msg: "victoriametrics_listen_addr must be set and non-empty"
+      when: victoriametrics_listen_addr | length == 0
+
+    - name: Fail if victoriametrics_user is empty
+      ansible.builtin.fail:
+        msg: "victoriametrics_user must be set and non-empty"
+      when: victoriametrics_user | length == 0
+
+    - name: Fail if victoriametrics_password is empty
+      ansible.builtin.fail:
+        msg: "victoriametrics_password must be set and non-empty"
+      when: victoriametrics_password | length == 0
+
 - name: Run VictoriaMetrics container
   community.docker.docker_container:
     name: victoria-metrics
@@ -8,14 +26,12 @@
     network_mode: host
     command:
       - '-storageDataPath=/storage'
-      - '-retentionPeriod={{ vm_retention_period }}'
-      - '-httpListenAddr={{ vm_listen_addr }}'
-      - '-httpAuth.username={{ vm_user }}'
-      - '-httpAuth.password={{ vm_password }}'
+      - '-retentionPeriod={{ victoriametrics_retention_period }}'
+      - '-httpListenAddr={{ victoriametrics_listen_addr }}'
+      - '-httpAuth.username={{ victoriametrics_user }}'
+      - '-httpAuth.password={{ victoriametrics_password }}'
       - '-selfScrapeInterval=15s'
     volumes:
       - /var/lib/victoria-metrics:/storage
   become: true
-  tags:
-    - victoriametrics
-    - monitoring_server
+  tags: [victoriametrics, monitoring_server]

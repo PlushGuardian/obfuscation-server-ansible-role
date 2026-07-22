@@ -22,7 +22,7 @@
 - name: Open firewall port for MTProto
   community.general.ufw:
     rule: allow
-    port: "{{ mtproxy_port }}"
+    port: "{{ mtproxymax_mtproxy_port }}"
     proto: tcp
   become: true
   tags: [mtproxymax, firewall, security]
@@ -110,10 +110,10 @@
   ansible.builtin.script: run_installation_interactive.sh
   become: true
   environment:
-    MTPROXY_PORT: "{{ mtproxy_port }}"
-    MTPROXYMAX_FAKETLS_DOMAIN: "{{ mtproxy_faketls_domain | default('yandex.com') }}"
-    MTPROXY_CPU_LIMIT: "{{ mtproxy_cpu_limit | default(0.2) }}"
-    MTPROXY_MEMORY_LIMIT: "{{ mtproxy_memory_limit | default('300m') }}"
+    MTPROXYMAX_MTPROXY_PORT: "{{ mtproxymax_mtproxy_port }}"
+    MTPROXYMAX_FAKETLS_DOMAIN: "{{ mtproxymax_mtproxy_faketls_domain }}"
+    MTPROXYMAX_MTPROXY_CPU_LIMIT: "{{ mtproxymax_mtproxy_cpu_limit }}"
+    MTPROXYMAX_MTPROXY_MEMORY_LIMIT: "{{ mtproxymax_mtproxy_memory_limit }}"
     MTPROXYMAX_VERSION: "{{ mtproxymax_version }}"
     TERM: linux   # helps some prompts behave as if interactive
   args:
@@ -131,7 +131,7 @@
 - name: Check MTProxyMax is reachable after install/upgrade
   ansible.builtin.wait_for:
     host: 127.0.0.1
-    port: "{{ mtproxy_port }}"
+    port: "{{ mtproxymax_mtproxy_port }}"
     timeout: 30
   register: mtproxymax_health_check
   ignore_errors: true
@@ -219,8 +219,8 @@
 - name: Setup daily cron job to refresh proxy-multi.conf
   ansible.builtin.cron:
     name: "Update Telegram MTProto config"
-    minute: "{{ mtproxy_config_update_minute }}"
-    hour: "{{ mtproxy_config_update_hour }}"
+    minute: "{{ mtproxymax_mtproxy_config_update_minute }}"
+    hour: "{{ mtproxymax_mtproxy_config_update_hour }}"
     job: "/usr/local/sbin/update_mtproxymax_config.sh"
     user: root
     state: present

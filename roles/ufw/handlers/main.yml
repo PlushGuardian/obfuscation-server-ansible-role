@@ -1,9 +1,7 @@
 ---
-- name: Reload UFW if it is already active
+- name: Reload UFW
   community.general.ufw:
     state: reloaded
   become: true
-  when:
-    - "'Status: active' in firewall_ufw_status.stdout"
   changed_when: false
   listen: reload ufw

@@ -1,0 +1,3 @@
+admin_users_list: []
+admin_users_sudo_group_name: sudo
+admin_users_purge_home: true

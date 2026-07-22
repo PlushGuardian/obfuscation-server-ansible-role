@@ -1,88 +1,94 @@
+- name: Validate 3x-ui settings
+  tags: [x_ui]
+  block:
+    - name: Fail if x_ui_panel_username is empty
+      ansible.builtin.fail:
+        msg: "x_ui_panel_username must be set and non-empty"
+      when: x_ui_panel_username | length == 0
 
-`
-- name: Allow traffic on port 80 for ACME
-  community.general.ufw:
-    rule: allow
-    port: "{{ x_ui_panel_acme_port }}"
+    - name: Fail if x_ui_panel_password is empty
+      ansible.builtin.fail:
+        msg: "x_ui_panel_password must be set and non-empty"
+      when: x_ui_panel_password | length == 0
+
+    - name: Fail if x_ui_web_base_path is empty
+      ansible.builtin.fail:
+        msg: "x_ui_web_base_path must be set and non-empty"
+      when: x_ui_web_base_path | length == 0
+
+- name: Allow traffic through UFW
   become: true
   tags:
     - x_ui
     - firewall
     - security
+  block:
+    - name: Allow traffic on port 80 for ACME
+      community.general.ufw:
+        rule: allow
+        port: "{{ x_ui_panel_acme_port }}"
 
-- name: Allow traffic on 3X-UI panel port
-  community.general.ufw:
-    rule: allow
-    port: "{{ x_ui_panel_port }}"
-    proto: tcp
-  become: true
-  tags:
-    - x_ui
-    - firewall
-    - security
+
+    - name: Allow traffic on 3X-UI panel port
+      community.general.ufw:
+        rule: allow
+        port: "{{ x_ui_panel_port }}"
+        proto: tcp
 
 # =========================================
 #   INSTALL / UPDATE 3X-UI TO x_ui_version
 # =========================================
-- name: Check if 3x-ui files are present
-  ansible.builtin.stat:
-    path: "{{ item }}"
-  with_items:
-    - /usr/local/x-ui/x-ui  # Main binary
-    - /usr/bin/x-ui         # Management script
-  register: x_ui_files
-  when: not x_ui_installed_skipped | default(false)
+- name: Make prechecks before install
   tags:
     - x_ui
+  block:
+    - name: Check if 3x-ui files are present
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      with_items:
+        - /usr/local/x-ui/x-ui  # Main binary
+        - /usr/bin/x-ui         # Management script
+      register: x_ui_files
+      when: not x_ui_installed_skipped | default(false)
 
-- name: Determine if 3x-ui is installed
-  ansible.builtin.set_fact:
-    x_ui_installed: >-
-      {{ (x_ui_files.results | default([]))
-         | selectattr('stat.exists', 'equalto', true)
-         | list | length > 0 }}
-  tags:
-    - x_ui
+    - name: Determine if 3x-ui is installed
+      ansible.builtin.set_fact:
+        x_ui_installed: >-
+          {{ (x_ui_files.results | default([]))
+            | selectattr('stat.exists', 'equalto', true)
+            | list | length > 0 }}
 
-- name: Get the currently installed 3x-ui version
-  ansible.builtin.command: /usr/local/x-ui/x-ui -v
-  register: x_ui_current_version_raw
-  become: true
-  changed_when: false
-  check_mode: false
-  when: x_ui_installed
-  tags:
-    - x_ui
+    - name: Get the currently installed 3x-ui version
+      ansible.builtin.command: /usr/local/x-ui/x-ui -v
+      register: x_ui_current_version_raw
+      become: true
+      changed_when: false
+      check_mode: false
+      when: x_ui_installed
 
-- name: Normalize desired and installed version strings for comparison
-  ansible.builtin.set_fact:
-    x_ui_current_version_normalized: "{{ (x_ui_current_version_raw.stdout | default('')) | trim | regex_replace('^[vV]', '') }}"
-    x_ui_desired_version_normalized: "{{ (x_ui_version | string) | trim | regex_replace('^[vV]', '') }}"
-  tags:
-    - x_ui
+    - name: Normalize desired and installed version strings for comparison
+      ansible.builtin.set_fact:
+        x_ui_current_version_normalized: "{{ (x_ui_current_version_raw.stdout | default('')) | trim | regex_replace('^[vV]', '') }}"
+        x_ui_desired_version_normalized: "{{ (x_ui_version | string) | trim | regex_replace('^[vV]', '') }}"
 
-- name: Fail if x_ui_version is older than the version already installed
-  ansible.builtin.fail:
-    msg: >-
-      x_ui_version is set to {{ x_ui_version }}, which is older than the
-      3x-ui version already installed on this host
-      ({{ x_ui_current_version_raw.stdout | trim }}). This role does not
-      support downgrading 3x-ui automatically — set x_ui_version to
-      {{ x_ui_current_version_raw.stdout | trim }} or newer, or downgrade
-      the panel manually first.
-  when:
-    - x_ui_installed
-    - x_ui_desired_version_normalized is version(x_ui_current_version_normalized, '<')
-  tags:
-    - x_ui
+    - name: Fail if x_ui_version is older than the version already installed
+      ansible.builtin.fail:
+        msg: >-
+          x_ui_version is set to {{ x_ui_version }}, which is older than the
+          3x-ui version already installed on this host
+          ({{ x_ui_current_version_raw.stdout | trim }}). This role does not
+          support downgrading 3x-ui automatically — set x_ui_version to
+          {{ x_ui_current_version_raw.stdout | trim }} or newer, or downgrade
+          the panel manually first.
+      when:
+        - x_ui_installed
+        - x_ui_desired_version_normalized is version(x_ui_current_version_normalized, '<')
 
-- name: Determine whether 3x-ui needs to be updated
-  ansible.builtin.set_fact:
-    x_ui_needs_update: >-
-      {{ x_ui_installed and
-         (x_ui_desired_version_normalized is version(x_ui_current_version_normalized, '>')) }}
-  tags:
-    - x_ui
+    - name: Determine whether 3x-ui needs to be updated
+      ansible.builtin.set_fact:
+        x_ui_needs_update: >-
+          {{ x_ui_installed and
+            (x_ui_desired_version_normalized is version(x_ui_current_version_normalized, '>')) }}
 
 - name: Download 3x‑UI install script
   ansible.builtin.get_url:
@@ -119,55 +125,47 @@
 # =========================================
 #        UPDATE WEB PAGE CREDENTIALS
 # =========================================
-- name: Compute desired x-ui credentials fingerprint
-  ansible.builtin.set_fact:
-    x_ui_creds_fingerprint: "{{ (x_ui_panel_username + x_ui_panel_password + x_ui_panel_port | string) | hash('sha256') }}"
-  no_log: true
-  tags:
-    - x_ui
-    - security
-
-- name: Read stored credentials fingerprint, if any
-  ansible.builtin.slurp:
-    src: /etc/x-ui/.ansible_creds_fingerprint
-  register: x_ui_stored_fingerprint_raw
+- name: Update web page credentials
   become: true
-  failed_when: false
   tags:
     - x_ui
     - security
+  block:
+    - name: Compute desired x-ui credentials fingerprint
+      ansible.builtin.set_fact:
+        x_ui_creds_fingerprint: "{{ (x_ui_panel_username + x_ui_panel_password + x_ui_panel_port | string) | hash('sha256') }}"
+      no_log: true
 
-- name: Determine whether credentials actually changed
-  ansible.builtin.set_fact:
-    x_ui_creds_changed: >-
-      {{ x_ui_stored_fingerprint_raw.content is not defined
-         or (x_ui_stored_fingerprint_raw.content | b64decode | trim) != x_ui_creds_fingerprint }}
-  tags:
-    - x_ui
-    - security
+    - name: Read stored credentials fingerprint, if any
+      ansible.builtin.slurp:
+        src: /etc/x-ui/.ansible_creds_fingerprint
+      register: x_ui_stored_fingerprint_raw
+      become: true
+      failed_when: false
 
-- name: Set panel port, username, and password (only when they changed)
-  ansible.builtin.command: >
-    /usr/bin/x-ui setting
-    -username {{ x_ui_panel_username }}
-    -password {{ x_ui_panel_password }}
-    -port {{ x_ui_panel_port }}
-  become: true
-  no_log: true
-  when: x_ui_creds_changed
-  notify: Restart x-ui
-  tags:
-    - x_ui
-    - security
+    - name: Determine whether credentials actually changed
+      ansible.builtin.set_fact:
+        x_ui_creds_changed: >-
+          {{ x_ui_stored_fingerprint_raw.content is not defined
+            or (x_ui_stored_fingerprint_raw.content | b64decode | trim) != x_ui_creds_fingerprint }}
 
-- name: Persist the new credentials fingerprint
-  ansible.builtin.copy:
-    content: "{{ x_ui_creds_fingerprint }}"
-    dest: /etc/x-ui/.ansible_creds_fingerprint
-    mode: "0600"
-    owner: root
-  become: true
-  no_log: true
-  when: x_ui_creds_changed
-  tags:
-    - x_ui
+    - name: Set panel port, username, and password (only when they changed)
+      ansible.builtin.command: >
+        /usr/bin/x-ui setting
+        -username {{ x_ui_panel_username }}
+        -password {{ x_ui_panel_password }}
+        -port {{ x_ui_panel_port }}
+      become: true
+      no_log: true
+      when: x_ui_creds_changed
+      notify: Restart x-ui
+
+    - name: Persist the new credentials fingerprint
+      ansible.builtin.copy:
+        content: "{{ x_ui_creds_fingerprint }}"
+        dest: /etc/x-ui/.ansible_creds_fingerprint
+        mode: "0600"
+        owner: root
+      become: true
+      no_log: true
+      when: x_ui_creds_changed

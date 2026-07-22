@@ -8,7 +8,7 @@
           - item.username is defined
           - item.ssh_key is defined
         quiet: true
-      loop: "{{ admin_users }}"
+      loop: "{{ admin_users_list }}"
       loop_control:
         label: "{{ item.username | default('unknown') }}"
 
@@ -34,7 +34,7 @@
       ansible.builtin.user:
         name: "{{ item }}"
         state: absent
-        remove: "{{ admin_users_purge_home | default(true) }}"
+        remove: "{{ admin_users_purge_home }}"
         force: true
       loop: "{{ admin_users_current_admins }}"
       when:
