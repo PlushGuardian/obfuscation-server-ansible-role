@@ -14,7 +14,7 @@
 - name: Wait for mtproxymax to accept connections
   ansible.builtin.wait_for:
     host: 127.0.0.1
-    port: "{{ mtproxy_port }}"
+    port: "{{ mtproxymax_mtproxy_port }}"
     state: started
     timeout: 30
   listen: "Restart mtproxymax"

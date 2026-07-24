@@ -2,18 +2,10 @@
 - name: Core setup of hosts
   hosts: all
   remote_user: ansible
-
   roles:
     - ssh
     - admin_users
     - firewall
-
-  tasks:
-    - name: Install Docker
-      ansible.builtin.include_role:
-        name: geerlingguy.docker
-        apply:
-          become: true
 
 - name: Configure monitoring on all hosts
   hosts: all
