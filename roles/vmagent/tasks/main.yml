@@ -1,7 +1,4 @@
 ---
-- name: Validate vmagent variables
-  tags: [vmagent, monitoring]
-
 - name: Configure vmagent
   tags: [vmagent, monitoring]
   become: true
@@ -18,7 +15,6 @@
         dest: /etc/vmagent/scrape.yml
         mode: "0644"
 
-
 - name: Run vmagent container
   community.docker.docker_container:
     name: vmagent
@@ -30,9 +26,9 @@
       - /etc/vmagent/scrape.yml:/etc/vmagent/scrape.yml
     command:
       - '-promscrape.config=/etc/vmagent/scrape.yml'
-      - '-remoteWrite.url=http://{{ vm_server_fqdn }}:8428/api/v1/write'
-      - '-remoteWrite.basicAuth.username={{ vm_user }}'
-      - '-remoteWrite.basicAuth.password={{ vm_password }}'
+      - '-remoteWrite.url=http://{{ victoriametrics_server_fqdn }}:8428/api/v1/write'
+      - '-remoteWrite.basicAuth.username={{ victoriametrics_user }}'
+      - '-remoteWrite.basicAuth.password={{ victoriametrics_password }}'
       - '-httpListenAddr=:{{ vmagent_port }}'
       - '-remoteWrite.label=node={{ inventory_hostname }}'
   become: true

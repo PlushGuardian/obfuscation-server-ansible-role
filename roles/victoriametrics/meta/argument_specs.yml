@@ -1,0 +1,29 @@
+---
+argument_specs:
+  main:
+    short_description: >-
+      Runs the central VictoriaMetrics storage container. This spec
+      duplicates the manual assert/fail block already in tasks/main.yml —
+      remove that block once this file is in place.
+    options:
+      victoriametrics_listen_addr:
+        type: str
+        default: "0.0.0.0:8428"
+        description: "Address/port VictoriaMetrics listens on"
+      victoriametrics_user:
+        type: str
+        required: true
+        description: >-
+          Basic-auth username. Must match the vm_user set on every vmagent
+          instance remote-writing to this server.
+      victoriametrics_password:
+        type: str
+        required: true
+        no_log: true
+        description: >-
+          Basic-auth password. Must match the vm_password set on every
+          vmagent instance remote-writing to this server.
+      victoriametrics_retention_period:
+        type: str
+        default: 15d
+        description: How long to retain stored metrics.

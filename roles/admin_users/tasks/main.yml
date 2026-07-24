@@ -2,7 +2,7 @@
   become: true
   tags: [admin_users, security]
   block:
-    - name: Validate admin_users structure
+    - name: Validate admin_users_list structure
       ansible.builtin.assert:
         that:
           - item.username is defined
@@ -27,7 +27,7 @@
         admin_users_current_admins: >-
           {{ (admin_users_sudo_group.ansible_facts.getent_group[admin_users_sudo_group_name][2]
               | default('', true)).split(',') | reject('equalto', '') | list }}
-        admin_users_new_admins: "{{ admin_users | map(attribute='username') | list }}"
+        admin_users_new_admins: "{{ admin_users_list | map(attribute='username') | list }}"
         admin_users_protected: "{{ ['root', ansible_user | default(omit)] | select('string') | list }}"
 
     - name: Remove stale admin users
@@ -53,7 +53,7 @@
         append: true
         shell: "{{ item.shell | default('/bin/bash') }}"
         create_home: true
-      loop: "{{ admin_users }}"
+      loop: "{{ admin_users_list }}"
       loop_control:
         label: "{{ item.username }}"
 
@@ -63,7 +63,7 @@
         key: "{{ item.ssh_key | trim }}"
         state: present
         exclusive: true
-      loop: "{{ admin_users }}"
+      loop: "{{ admin_users_list }}"
       loop_control:
         label: "{{ item.username }}"
       no_log: true
@@ -74,4 +74,4 @@
         dest: /etc/sudoers.d/90-admin-nopasswd
         validate: visudo -cf %s
         mode: '0440'
-      when: admin_users_passwordless_sudo | default(true)
+      when: admin_users_passwordless_sudo

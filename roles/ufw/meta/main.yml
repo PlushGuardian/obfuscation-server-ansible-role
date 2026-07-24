@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  role_name: ufw
+  description: Installs and configures UFW with default-deny inbound policy, ICMP blocking, and an allowlist of extra rules
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions: ["22.04", "24.04", "26.04"]
+    - name: Debian
+      versions: ["12", "13"]
+
+dependencies: []

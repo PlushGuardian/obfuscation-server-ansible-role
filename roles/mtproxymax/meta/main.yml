@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  role_name: mtproxymax
+  description: Installs, upgrades, and configures the MTProxyMax MTProto proxy, with automatic Telegram config refresh and NAT handling
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions: ["22.04", "24.04", "26.04"]
+    - name: Debian
+      versions: ["12", "13"]
+
+dependencies:
+  - role: ufw

@@ -1,0 +1,47 @@
+---
+argument_specs:
+  main:
+    short_description: Installs, upgrades, and configures the MTProxyMax MTProto proxy
+    options:
+      mtproxymax_version:
+        type: str
+        default: "v1.4.0-LTS"
+        description: >-
+          Desired MTProxyMax version. The role refuses to downgrade if an
+          installed version is newer than this.
+      mtproxymax_installer_url:
+        type: str
+        default: "https://raw.githubusercontent.com/SamNet-dev/MTProxyMax/refs/heads/main/install.sh"
+        description: URL the installer script is downloaded from.
+      mtproxymax_version_regex:
+        type: str
+        default: '([0-9]+\.[0-9]+\.[0-9]+)'
+        description: Regex used to extract a semver-ish string from `mtproxymax --version` output.
+      mtproxymax_config_path:
+        type: path
+        default: /opt/MTProxy/proxy-multi.conf
+        description: Path to the live Telegram proxy config file managed by the refresh script.
+      mtproxymax_mtproxy_port:
+        type: int
+        default: 443
+        description: Port MTProxyMax listens on; also opened in UFW by this role.
+      mtproxymax_mtproxy_faketls_domain:
+        type: str
+        default: yandex.com
+        description: Domain used for FakeTLS obfuscation.
+      mtproxymax_mtproxy_cpu_limit:
+        type: float
+        default: 0.2
+        description: CPU limit passed to the installer.
+      mtproxymax_mtproxy_memory_limit:
+        type: str
+        default: "300m"
+        description: Memory limit passed to the installer.
+      mtproxymax_mtproxy_config_update_minute:
+        type: str
+        default: "17"
+        description: Cron minute field for the daily Telegram config refresh job.
+      mtproxymax_mtproxy_config_update_hour:
+        type: str
+        default: "4"
+        description: Cron hour field for the daily Telegram config refresh job.

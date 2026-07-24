@@ -1,7 +1,4 @@
 ---
-# ============================================================
-#  Preconditions
-# ============================================================
 - name: Check preconditions for SSH hardening
   tags:
     - ssh
@@ -50,9 +47,6 @@
           Disabling password authentication now would lock you out — deploy a
           key first.
 
-# ============================================================
-#  Security hardening: disable password auth and root SSH login
-# ============================================================
 - name: Apply SSH hardening
   become: true
   tags:

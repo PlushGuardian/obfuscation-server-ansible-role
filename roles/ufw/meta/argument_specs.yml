@@ -1,0 +1,44 @@
+---
+argument_specs:
+  main:
+    short_description: Installs and configures UFW with default-deny inbound policy
+    options:
+      ufw_default_incoming_policy:
+        type: str
+        default: deny
+        choices: [allow, deny, reject]
+        description: Default policy applied to incoming traffic.
+      ufw_default_outgoing_policy:
+        type: str
+        default: allow
+        choices: [allow, deny, reject]
+        description: Default policy applied to outgoing traffic.
+      ufw_block_icmp_chains:
+        type: list
+        elements: str
+        default: [ufw-before-input, ufw-before-forward]
+        description: before.rules chains where ICMP echo-request (ping) is dropped.
+      ufw_before_rules_path:
+        type: path
+        default: /etc/ufw/before.rules
+        description: Path to ufw's before.rules file.
+      ufw_ssh_port:
+        type: int
+        description: >-
+          Port always allowed for SSH/Ansible control access. Defaults to
+          ansible_port, falling back to 22, if not explicitly set.
+      ufw_extra_allow_rules:
+        type: list
+        elements: dict
+        default: []
+        description: Additional allow rules to open.
+        options:
+          port:
+            type: int
+            required: true
+            description: Port to allow.
+          proto:
+            type: str
+            default: tcp
+            choices: [tcp, udp]
+            description: Protocol for the rule.
