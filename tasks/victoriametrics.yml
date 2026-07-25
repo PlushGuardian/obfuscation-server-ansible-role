@@ -25,12 +25,12 @@
     restart_policy: unless-stopped
     network_mode: host
     command:
-      - '-storageDataPath=/storage'
-      - '-retentionPeriod={{ victoriametrics_retention_period }}'
-      - '-httpListenAddr={{ victoriametrics_listen_addr }}'
-      - '-httpAuth.username={{ victoriametrics_user }}'
-      - '-httpAuth.password={{ victoriametrics_password }}'
-      - '-selfScrapeInterval=15s'
+      - "-storageDataPath=/storage"
+      - "-retentionPeriod={{ victoriametrics_retention_period }}"
+      - "-httpListenAddr={{ victoriametrics_listen_addr }}"
+      - "-httpAuth.username={{ victoriametrics_user }}"
+      - "-httpAuth.password={{ victoriametrics_password }}"
+      - "-selfScrapeInterval=15s"
     volumes:
       - /var/lib/victoria-metrics:/storage
   become: true

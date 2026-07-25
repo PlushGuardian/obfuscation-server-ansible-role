@@ -1,0 +1,35 @@
+---
+galaxy_info:
+  role_name: obfuscation_cluster
+  author: PlushGuardian
+  namespace: plushguardian
+  description: >-
+    Provisions and hardens hosts for an obfuscated proxy/VPN stack: SSH hardening,
+    admin user management, UFW firewall, Tailscale, Prometheus node_exporter/vmagent/
+    VictoriaMetrics monitoring, MTProxyMax, and 3X-UI.
+  company:
+  license: AGPL-3.0
+  min_ansible_version: "2.18"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+        - resolute
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+        - trixie
+  galaxy_tags:
+    - proxy
+    - vpn
+    - obfuscation
+    - security
+    - firewall
+    - monitoring
+    - docker
+
+dependencies:
+  - role: geerlingguy.docker
+    version: 8.0.0

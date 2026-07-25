@@ -88,7 +88,7 @@
   ansible.builtin.get_url:
     url: "{{ mtproxymax_installer_url }}"
     dest: /tmp/mtproxymax-install.sh
-    mode: '0755'
+    mode: "0755"
     force: true
   become: true
   when: mtproxymax_upgrade_needed
@@ -115,7 +115,7 @@
     MTPROXYMAX_MTPROXY_CPU_LIMIT: "{{ mtproxymax_mtproxy_cpu_limit }}"
     MTPROXYMAX_MTPROXY_MEMORY_LIMIT: "{{ mtproxymax_mtproxy_memory_limit }}"
     MTPROXYMAX_VERSION: "{{ mtproxymax_version }}"
-    TERM: linux   # helps some prompts behave as if interactive
+    TERM: linux # helps some prompts behave as if interactive
   args:
     executable: bash
   timeout: 600
@@ -212,7 +212,7 @@
     dest: /usr/local/sbin/mtproxymax_update_config.sh
     owner: root
     group: root
-    mode: '0750'
+    mode: "0750"
   become: true
   tags: [mtproxymax]
 

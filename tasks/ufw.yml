@@ -22,8 +22,8 @@
     - name: Block ICMP echo-request (ping) in ufw before.rules
       ansible.builtin.replace:
         path: "{{ ufw_before_rules_path }}"
-        regexp: '^(-A {{ item }} -p icmp --icmp-type echo-request -j)\s*ACCEPT'
-        replace: '\1 DROP'
+        regexp: "^(-A {{ item }} -p icmp --icmp-type echo-request -j)\\s*ACCEPT"
+        replace: "\\1 DROP"
         backup: true
       diff: true
       loop: "{{ ufw_block_icmp_chains }}"

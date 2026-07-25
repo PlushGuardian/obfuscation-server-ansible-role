@@ -64,8 +64,8 @@
         path: "{{ item.path }}"
         # Anchored to column 0 so directives inside indented `Match` blocks
         # are left untouched; (?i) makes the keyword match case-insensitively.
-        regexp: '(?i)^((PasswordAuthentication|PermitRootLogin|PermitEmptyPasswords)\s+\S.*)$'
-        replace: '# \1'
+        regexp: "(?i)^((PasswordAuthentication|PermitRootLogin|PermitEmptyPasswords)\\s+\\S.*)$"
+        replace: "# \\1"
       loop: "{{ ssh_override_files.files }}"
       loop_control:
         label: "{{ item.path }}"
@@ -73,15 +73,15 @@
     - name: Enforce key-only, no-root SSH access in the main sshd_config
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
-        regexp: '(?i)^#?\s*{{ item.key }}\b.*$'
+        regexp: "(?i)^#?\\s*{{ item.key }}\\b.*$"
         line: "{{ item.key }} {{ item.value }}"
         state: present
         backup: true
-        validate: '/usr/sbin/sshd -t -f %s'
+        validate: "/usr/sbin/sshd -t -f %s"
       loop:
-        - { key: PasswordAuthentication, value: 'no' }
-        - { key: PermitEmptyPasswords,   value: 'no' }
-        - { key: PermitRootLogin,        value: 'no' }
+        - { key: PasswordAuthentication, value: "no" }
+        - { key: PermitEmptyPasswords, value: "no" }
+        - { key: PermitRootLogin, value: "no" }
       loop_control:
         label: "{{ item.key }}"
       notify: Restart ssh

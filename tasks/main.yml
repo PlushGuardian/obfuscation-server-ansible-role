@@ -1,44 +1,32 @@
 ---
-- name: Core setup of hosts
-  hosts: all
-  remote_user: ansible
-  tasks:
-    - import_tasks: tasks/ssh.yml
-    - import_tasks: tasks/admin_users.yml
-    - import_tasks: tasks/firewall.yml
+# Core setup: SSH hardening, admin users, firewall.
+# Applies to every host this role runs against.
+- import_tasks: ssh.yml
+- import_tasks: admin_users.yml
+- import_tasks: ufw.yml
 
 # TODO configure headscale
 
-- name: Configure multinode connection
-  hosts: all
-  remote_user: ansible
-  when: is_cluster_inastallation | default(true)
-  tasks:
-    - import_tasks: tasks/tailscale.yml
+# Multi-node connectivity (Tailscale) — skip on standalone installs.
+- import_tasks: tailscale.yml
+  when: is_cluster_installation | default(true)
 
-- name: Configure monitoring on all hosts
-  hosts: all
-  remote_user: ansible
+# Monitoring agents — every host, when monitoring is enabled.
+- import_tasks: node_exporter.yml
   when: enable_monitoring | default(true)
-  tasks:
-    - import_tasks: tasks/node_exporter.yml
-    - import_tasks: tasks/vmagent.yml
-
-- name: Setup metrics storage on a server
-  hosts: monitoring_servers
-  remote_user: ansible
+- import_tasks: vmagent.yml
   when: enable_monitoring | default(true)
-  tasks:
-    - import_tasks: tasks/victoriametrics.yml
 
-- name: Install MTProxyMax
-  hosts: mtproxymax_hosts
-  remote_user: ansible
-  tasks:
-    - import_tasks: tasks/mtproxymax.yml
+# Metrics storage — only on hosts in the monitoring_servers group.
+- import_tasks: victoriametrics.yml
+  when:
+    - enable_monitoring | default(true)
+    - inventory_hostname in groups['monitoring_servers'] | default([])
 
-- name: Install 3X-UI
-  hosts: x_ui_hosts
-  remote_user: ansible
-  tasks:
-    - import_tasks: tasks/x_ui_inbounds.yml
+# MTProxyMax — only on hosts in the mtproxymax_hosts group.
+- import_tasks: mtproxymax.yml
+  when: inventory_hostname in groups['mtproxymax_hosts'] | default([])
+
+# 3X-UI — only on hosts in the x_ui_hosts group.
+- import_tasks: x_ui.yml
+  when: inventory_hostname in groups['x_ui_hosts'] | default([])

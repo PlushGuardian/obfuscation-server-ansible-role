@@ -1,0 +1,8 @@
+---
+# handlers/*.yml files are only loaded automatically if named handlers/main.yml,
+# so this file exists purely to pull the per-component handler files in.
+- import_tasks: admin_users.yml
+- import_tasks: mtproxymax.yml
+- import_tasks: ssh.yml
+- import_tasks: ufw.yml
+- import_tasks: x_ui.yml

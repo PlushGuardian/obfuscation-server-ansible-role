@@ -25,11 +25,11 @@
     volumes:
       - /etc/vmagent/scrape.yml:/etc/vmagent/scrape.yml
     command:
-      - '-promscrape.config=/etc/vmagent/scrape.yml'
-      - '-remoteWrite.url=http://{{ victoriametrics_server_fqdn }}:8428/api/v1/write'
-      - '-remoteWrite.basicAuth.username={{ victoriametrics_user }}'
-      - '-remoteWrite.basicAuth.password={{ victoriametrics_password }}'
-      - '-httpListenAddr=:{{ vmagent_port }}'
-      - '-remoteWrite.label=node={{ inventory_hostname }}'
+      - "-promscrape.config=/etc/vmagent/scrape.yml"
+      - "-remoteWrite.url=http://{{ victoriametrics_server_fqdn }}:8428/api/v1/write"
+      - "-remoteWrite.basicAuth.username={{ victoriametrics_user }}"
+      - "-remoteWrite.basicAuth.password={{ victoriametrics_password }}"
+      - "-httpListenAddr=:{{ vmagent_port }}"
+      - "-remoteWrite.label=node={{ inventory_hostname }}"
   become: true
   tags: [vmagent, monitoring]

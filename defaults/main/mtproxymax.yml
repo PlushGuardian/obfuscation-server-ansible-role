@@ -9,7 +9,7 @@ mtproxymax_installer_url: "https://raw.githubusercontent.com/SamNet-dev/MTProxyM
 
 # Regex used to pull a semver-ish string out of `mtproxymax --version` output.
 # Adjust to match the real CLI's output format.
-mtproxymax_version_regex: '([0-9]+\.[0-9]+\.[0-9]+)'
+mtproxymax_version_regex: "([0-9]+\\.[0-9]+\\.[0-9]+)"
 
 mtproxymax_config_path: /opt/MTProxy/proxy-multi.conf
 

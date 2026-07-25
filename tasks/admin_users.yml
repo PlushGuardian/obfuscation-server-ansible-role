@@ -1,3 +1,4 @@
+---
 - name: Manage admin users and sudo access
   become: true
   tags: [admin_users, security]
@@ -73,5 +74,5 @@
         content: "%{{ admin_users_sudo_group_name }} ALL=(ALL) NOPASSWD: ALL\n"
         dest: /etc/sudoers.d/90-admin-nopasswd
         validate: visudo -cf %s
-        mode: '0440'
+        mode: "0440"
       when: admin_users_passwordless_sudo
