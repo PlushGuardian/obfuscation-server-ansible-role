@@ -107,7 +107,7 @@
   tags: [mtproxymax]
 
 - name: Install or upgrade MTProxyMax non-interactively
-  ansible.builtin.script: run_installation_interactive.sh
+  ansible.builtin.script: mtproxymax_run_installation_interactive.sh
   become: true
   environment:
     MTPROXYMAX_MTPROXY_PORT: "{{ mtproxymax_mtproxy_port }}"
@@ -208,8 +208,8 @@
 
 - name: Deploy safe config-refresh script
   ansible.builtin.template:
-    src: update_mtproxymax_config.sh.j2
-    dest: /usr/local/sbin/update_mtproxymax_config.sh
+    src: mtproxymax_update_config.sh.j2
+    dest: /usr/local/sbin/mtproxymax_update_config.sh
     owner: root
     group: root
     mode: '0750'
@@ -221,7 +221,7 @@
     name: "Update Telegram MTProto config"
     minute: "{{ mtproxymax_mtproxy_config_update_minute }}"
     hour: "{{ mtproxymax_mtproxy_config_update_hour }}"
-    job: "/usr/local/sbin/update_mtproxymax_config.sh"
+    job: "/usr/local/sbin/mtproxymax_update_config.sh"
     user: root
     state: present
   become: true

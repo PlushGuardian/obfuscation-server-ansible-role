@@ -1,0 +1,44 @@
+---
+- name: Core setup of hosts
+  hosts: all
+  remote_user: ansible
+  tasks:
+    - import_tasks: tasks/ssh.yml
+    - import_tasks: tasks/admin_users.yml
+    - import_tasks: tasks/firewall.yml
+
+# TODO configure headscale
+
+- name: Configure multinode connection
+  hosts: all
+  remote_user: ansible
+  when: is_cluster_inastallation | default(true)
+  tasks:
+    - import_tasks: tasks/tailscale.yml
+
+- name: Configure monitoring on all hosts
+  hosts: all
+  remote_user: ansible
+  when: enable_monitoring | default(true)
+  tasks:
+    - import_tasks: tasks/node_exporter.yml
+    - import_tasks: tasks/vmagent.yml
+
+- name: Setup metrics storage on a server
+  hosts: monitoring_servers
+  remote_user: ansible
+  when: enable_monitoring | default(true)
+  tasks:
+    - import_tasks: tasks/victoriametrics.yml
+
+- name: Install MTProxyMax
+  hosts: mtproxymax_hosts
+  remote_user: ansible
+  tasks:
+    - import_tasks: tasks/mtproxymax.yml
+
+- name: Install 3X-UI
+  hosts: x_ui_hosts
+  remote_user: ansible
+  tasks:
+    - import_tasks: tasks/x_ui_inbounds.yml

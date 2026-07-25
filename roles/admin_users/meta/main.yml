@@ -1,7 +1,0 @@
----
-galaxy_info:
-  role_name: admin_users
-  description: Manages admin user accounts, sudo group membership, and authorized_keys, removing stale accounts not in the desired list
-  min_ansible_version: "2.15"
-
-dependencies: []
