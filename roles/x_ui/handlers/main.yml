@@ -1,5 +1,6 @@
 ---
-- name: Restart sshd
+- name: Restart x-ui
   ansible.builtin.systemd:
-    name: sshd
+    name: x-ui
     state: restarted
+  become: true

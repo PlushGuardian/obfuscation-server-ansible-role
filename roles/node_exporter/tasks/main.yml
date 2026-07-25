@@ -1,6 +1,6 @@
 ---
 - name: Run node_exporter container
-  docker_container:
+  community.docker.docker_container:
     name: node_exporter
     image: quay.io/prometheus/node-exporter:latest
     state: started
@@ -17,3 +17,6 @@
       - /sys:/host/sys:ro
       - /:/host/root:ro
   become: true
+  tasks:
+    - node_exporter
+    - monitoring

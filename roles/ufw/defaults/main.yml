@@ -1,0 +1,21 @@
+---
+# Default UFW policies (defense in depth).
+ufw_default_incoming_policy: deny
+ufw_default_outgoing_policy: allow
+
+# ufw before.rules chains where ICMP echo-request (ping) should be dropped.
+ufw_block_icmp_chains:
+  - ufw-before-input
+  - ufw-before-forward
+
+ufw_before_rules_path: /etc/ufw/before.rules
+
+# Port used for SSH / Ansible connections. Falls back to ansible_port,
+# then to the conventional default of 22 if neither is set.
+ufw_ssh_port: "{{ ansible_port | default(22) }}"
+
+# Optional extra allow rules, e.g.:
+# ufw_extra_allow_rules:
+#   - { port: 80, proto: tcp }
+#   - { port: 443, proto: tcp }
+ufw_extra_allow_rules: []

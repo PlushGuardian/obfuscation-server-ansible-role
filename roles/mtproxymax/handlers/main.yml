@@ -1,6 +1,20 @@
 ---
-  - name: Restart mtproxymax
-    systemd:
-      name: mtproxymax
-      state: restarted
-    become: true
+# Any task that notifies "Restart mtproxymax" triggers both of these, once,
+# at the end of the play — even if multiple tasks notify it. This is what
+# stops the role from restarting the service several times in one run.
+
+- name: Restart mtproxymax
+  ansible.builtin.systemd:
+    name: mtproxymax
+    state: restarted
+    daemon_reload: true
+  become: true
+  listen: "Restart mtproxymax"
+
+- name: Wait for mtproxymax to accept connections
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: "{{ mtproxymax_mtproxy_port }}"
+    state: started
+    timeout: 30
+  listen: "Restart mtproxymax"

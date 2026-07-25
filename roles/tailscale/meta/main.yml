@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  role_name: tailscale
+  description: Installs Tailscale and joins the tailnet using an auth key
+  min_ansible_version: "2.15"
+
+dependencies: []

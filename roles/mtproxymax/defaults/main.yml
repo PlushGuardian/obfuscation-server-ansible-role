@@ -1,0 +1,22 @@
+---
+# Desired MTProxyMax version. The role will install this version if MTProxyMax
+# is absent, upgrade to it if an older version is installed, do nothing if it's
+# already installed, and FAIL if it is older than what's currently installed
+# (this role refuses to downgrade).
+mtproxymax_version: "v1.4.0-LTS"
+
+mtproxymax_installer_url: "https://raw.githubusercontent.com/SamNet-dev/MTProxyMax/refs/heads/main/install.sh"
+
+# Regex used to pull a semver-ish string out of `mtproxymax --version` output.
+# Adjust to match the real CLI's output format.
+mtproxymax_version_regex: '([0-9]+\.[0-9]+\.[0-9]+)'
+
+mtproxymax_config_path: /opt/MTProxy/proxy-multi.conf
+
+mtproxymax_mtproxy_port: 443
+mtproxymax_mtproxy_faketls_domain: "yandex.com"
+mtproxymax_mtproxy_cpu_limit: 0.2
+mtproxymax_mtproxy_memory_limit: "300m"
+
+mtproxymax_mtproxy_config_update_minute: "17"
+mtproxymax_mtproxy_config_update_hour: "4"

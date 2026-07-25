@@ -1,0 +1,7 @@
+---
+- name: Reload UFW
+  community.general.ufw:
+    state: reloaded
+  become: true
+  changed_when: false
+  listen: reload ufw

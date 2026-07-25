@@ -1,0 +1,13 @@
+---
+argument_specs:
+  main:
+    short_description: Runs the Prometheus node_exporter container
+    options:
+      node_exporter_port:
+        type: int
+        default: 9100
+        description: >-
+          Port node_exporter listens on. Also read by roles/vmagent's scrape
+          template, so changing it here requires vmagent to pick up the same
+          value (it currently relies on Ansible's shared per-host variable
+          scope rather than an explicit hand-off between the two roles).

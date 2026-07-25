@@ -1,0 +1,9 @@
+---
+galaxy_info:
+  role_name: node_exporter
+  description: Runs the Prometheus node_exporter container for host-level metrics
+  min_ansible_version: "2.15"
+
+dependencies:
+  - role: geerlingguy.docker
+    tags: [docker]
