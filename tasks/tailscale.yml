@@ -23,15 +23,3 @@
   become: true
   no_log: true
   tags: [tailscale, monitoring]
-
-# Retrieve and persist Tailscale IP for later use
-- name: Get Tailscale IP
-  ansible.builtin.command: tailscale ip -4
-  register: tailscale_ip_cmd
-  changed_when: false
-  tags: [tailscale, monitoring]
-
-- name: Set fact for Tailscale IP
-  ansible.builtin.set_fact:
-    tailscale_ip: "{{ tailscale_ip_cmd.stdout }}"
-  tags: [tailscale, monitoring]
