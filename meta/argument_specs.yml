@@ -23,10 +23,7 @@ argument_specs:
       node_exporter_port:
         type: int
         default: 9100
-        description: Port node_exporter listens on. Also read by roles/vmagent's scrape
-          template, so changing it here requires vmagent to pick up the same value
-          (it currently relies on Ansible's shared per-host variable scope rather
-          than an explicit hand-off between the two roles).
+        description: Port node_exporter listens on. 
   mtproxymax:
     short_description: Installs, upgrades, and configures MTProxyMax proxy
     options:
@@ -53,6 +50,10 @@ argument_specs:
         type: int
         default: 443
         description: Port MTProxyMax listens on; also opened in UFW by this role.
+      mtproxymax_metrics_port:
+        type: int
+        default: 9090
+        description: Port that exposes MTProxyMax telemt metrics in Prometheus format.
       mtproxymax_mtproxy_faketls_domain:
         type: str
         default: yandex.com
@@ -133,9 +134,7 @@ argument_specs:
         elements: dict
         default: []
         description: Desired set of admin users. Any existing sudo-group member not
-          present here (and not root or the current connection user) is removed. Written
-          assuming tasks/main.yml is fixed to reference admin_users_list consistently
-          — see note below.
+          present here (and not root or the current connection user) is removed.
         options:
           username:
             type: str
@@ -197,9 +196,7 @@ argument_specs:
         default: 9100
         description: Port the local node_exporter listens on.
   victoriametrics:
-    short_description: Runs the central VictoriaMetrics storage container. This spec
-      duplicates the manual assert/fail block already in tasks/main.yml — remove that
-      block once this file is in place.
+    short_description: Runs the central VictoriaMetrics storage container.
     options:
       victoriametrics_version:
         type: str
@@ -229,10 +226,7 @@ argument_specs:
         default: 15d
         description: How long to retain stored metrics.
   x_ui:
-    short_description: Installs and configures the 3x-ui panel. This spec covers structural
-      validation (required/type); it does not replace the empty-string checks already
-      in tasks/main.yml, since those also gate at runtime after install-state facts
-      are gathered.
+    short_description: Installs and configures the 3x-ui panel.
     options:
       x_ui_panel_username:
         type: str

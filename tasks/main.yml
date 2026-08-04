@@ -23,20 +23,20 @@
   ansible.builtin.include_role:
     name: obfuscation_server
     tasks_from: tailscale
-  when: is_cluster_installation | default(true)
+  when: is_cluster_installation
 
 # Monitoring agents — every host, when monitoring is enabled.
 - name: node_exporter
   ansible.builtin.include_role:
     name: obfuscation_server
     tasks_from: node_exporter
-  when: enable_monitoring | default(true)
+  when: monitoring_enabled
 
 - name: vmagent
   ansible.builtin.include_role:
     name: obfuscation_server
     tasks_from: vmagent
-  when: enable_monitoring | default(true)
+  when: monitoring_enabled
 
 # Metrics storage — only on hosts in the monitoring_servers group.
 - name: VictoriaMetrics
@@ -44,7 +44,7 @@
     name: obfuscation_server
     tasks_from: victoriametrics
   when:
-    - enable_monitoring | default(true)
+    - monitoring_enabled
     - inventory_hostname in groups['monitoring_servers'] | default([])
 
 # MTProxyMax — only on hosts in the mtproxymax_hosts group.

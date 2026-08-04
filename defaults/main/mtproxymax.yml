@@ -14,6 +14,7 @@ mtproxymax_version_regex: "([0-9]+\\.[0-9]+\\.[0-9]+)"
 mtproxymax_config_path: /opt/MTProxy/proxy-multi.conf
 
 mtproxymax_mtproxy_port: 443
+mtproxymax_metrics_port: 9090
 mtproxymax_mtproxy_faketls_domain: "yandex.com"
 mtproxymax_mtproxy_cpu_limit: 0.2
 mtproxymax_mtproxy_memory_limit: "300m"

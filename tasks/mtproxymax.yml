@@ -105,10 +105,10 @@
     - name: Install or upgrade MTProxyMax non-interactively
       ansible.builtin.script: mtproxymax_run_installation_interactive.sh
       environment:
-        MTPROXYMAX_MTPROXY_PORT: "{{ mtproxymax_mtproxy_port }}"
+        MTPROXYMAX_PORT: "{{ mtproxymax_mtproxy_port }}"
         MTPROXYMAX_FAKETLS_DOMAIN: "{{ mtproxymax_mtproxy_faketls_domain }}"
-        MTPROXYMAX_MTPROXY_CPU_LIMIT: "{{ mtproxymax_mtproxy_cpu_limit }}"
-        MTPROXYMAX_MTPROXY_MEMORY_LIMIT: "{{ mtproxymax_mtproxy_memory_limit }}"
+        MTPROXYMAX_CPU_LIMIT: "{{ mtproxymax_mtproxy_cpu_limit }}"
+        MTPROXYMAX_MEMORY_LIMIT: "{{ mtproxymax_mtproxy_memory_limit }}"
         MTPROXYMAX_VERSION: "{{ mtproxymax_version }}"
         PROXY_METRICS_PORT: "{{ mtproxymax_metrics_port }}"
         TERM: linux # helps some prompts behave as if interactive

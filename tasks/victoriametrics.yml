@@ -2,10 +2,10 @@
 - name: Validate VictoriaMetrics settings
   tags: [victoriametrics, monitoring_server]
   block:
-    - name: Fail if victoriametrics_listen_addr is empty
+    - name: Fail if victoriametrics_listen_ip is empty
       ansible.builtin.fail:
-        msg: "victoriametrics_listen_addr must be set and non-empty"
-      when: victoriametrics_listen_addr | length == 0
+        msg: "victoriametrics_listen_ip must be set and non-empty"
+      when: victoriametrics_listen_ip | length == 0
 
     - name: Fail if victoriametrics_user is empty
       ansible.builtin.fail:
