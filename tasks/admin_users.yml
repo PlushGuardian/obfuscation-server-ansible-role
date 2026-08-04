@@ -1,0 +1,78 @@
+---
+- name: Manage admin users and sudo access
+  become: true
+  tags: [admin_users, security]
+  block:
+    - name: Validate admin_users_list structure
+      ansible.builtin.assert:
+        that:
+          - item.username is defined
+          - item.ssh_key is defined
+        quiet: true
+      loop: "{{ admin_users_list }}"
+      loop_control:
+        label: "{{ item.username | default('unknown') }}"
+
+# ------------------------------------------------------------------
+#  REMOVE STALE ADMINS
+# ------------------------------------------------------------------
+
+    - name: Get current members of the admin sudo group
+      ansible.builtin.getent:
+        database: group
+        key: "{{ admin_users_sudo_group_name }}"
+      register: admin_users_sudo_group
+
+    - name: Compute current vs desired admin users
+      ansible.builtin.set_fact:
+        admin_users_current_admins: >-
+          {{ (admin_users_sudo_group.ansible_facts.getent_group[admin_users_sudo_group_name][2]
+              | default('', true)).split(',') | reject('equalto', '') | list }}
+        admin_users_new_admins: "{{ admin_users_list | map(attribute='username') | list }}"
+        admin_users_protected: "{{ ['root', ansible_user | default(omit)] | select('string') | list }}"
+
+    - name: Remove stale admin users
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: absent
+        remove: "{{ admin_users_purge_home }}"
+        force: true
+      loop: "{{ admin_users_current_admins }}"
+      when:
+        - item not in admin_users_new_admins
+        - item not in admin_users_protected
+
+# ------------------------------------------------------------------
+#  ADD NEW ADMINS
+# ------------------------------------------------------------------
+
+    - name: Ensure admin users exist
+      ansible.builtin.user:
+        name: "{{ item.username }}"
+        state: present
+        groups: "{{ admin_users_sudo_group_name }}"
+        append: true
+        shell: "{{ item.shell | default('/bin/bash') }}"
+        create_home: true
+      loop: "{{ admin_users_list }}"
+      loop_control:
+        label: "{{ item.username }}"
+
+    - name: Set authorized SSH keys for admin users
+      ansible.posix.authorized_key:
+        user: "{{ item.username }}"
+        key: "{{ item.ssh_key | trim }}"
+        state: present
+        exclusive: true
+      loop: "{{ admin_users_list }}"
+      loop_control:
+        label: "{{ item.username }}"
+      no_log: true
+
+    - name: Allow passwordless sudo for admin group
+      ansible.builtin.copy:
+        content: "%{{ admin_users_sudo_group_name }} ALL=(ALL) NOPASSWD: ALL\n"
+        dest: /etc/sudoers.d/90-admin-nopasswd
+        validate: visudo -cf %s
+        mode: "0440"
+      when: admin_users_passwordless_sudo

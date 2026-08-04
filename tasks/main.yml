@@ -1,0 +1,62 @@
+---
+# Core setup: SSH hardening, admin users, firewall.
+# Applies to every host this role runs against.
+- name: SSH hardening
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: ssh
+
+- name: Admin users
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: admin_users
+
+- name: UFW firewall
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: ufw
+
+# TODO configure headscale
+
+# Multi-node connectivity (Tailscale) — skip on standalone installs.
+- name: Tailscale
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: tailscale
+  when: is_cluster_installation
+
+# Monitoring agents — every host, when monitoring is enabled.
+- name: node_exporter
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: node_exporter
+  when: monitoring_enabled
+
+- name: vmagent
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: vmagent
+  when: monitoring_enabled
+
+# Metrics storage — only on hosts in the monitoring_servers group.
+- name: VictoriaMetrics
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: victoriametrics
+  when:
+    - monitoring_enabled
+    - inventory_hostname in groups['monitoring_servers'] | default([])
+
+# MTProxyMax — only on hosts in the mtproxymax_hosts group.
+- name: MTProxyMax
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: mtproxymax
+  when: inventory_hostname in groups['mtproxymax_hosts'] | default([])
+
+# 3X-UI — only on hosts in the x_ui_hosts group.
+- name: 3X-UI
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: x_ui
+  when: inventory_hostname in groups['x_ui_hosts'] | default([])

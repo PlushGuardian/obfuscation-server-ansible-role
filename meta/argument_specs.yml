@@ -1,0 +1,257 @@
+argument_specs:
+  ssh:
+    short_description: Hardens sshd (key-only auth, no root login, no empty passwords).
+      Takes no role variables — behavior is entirely precondition-driven, based on
+      the current connection (ansible_user, ansible_password) and the target host's
+      OS family.
+    options: {}
+  tailscale:
+    short_description: Installs Tailscale and joins the tailnet
+    options:
+      tailscale_auth_key:
+        type: str
+        required: true
+        no_log: true
+        description: Tailscale auth key used to join the tailnet.
+  node_exporter:
+    short_description: Runs the Prometheus node_exporter container
+    options:
+      node_exporter_version:
+        type: str
+        default: v1.12.1
+        description: Desired node_exporte version.
+      node_exporter_port:
+        type: int
+        default: 9100
+        description: Port node_exporter listens on. 
+  mtproxymax:
+    short_description: Installs, upgrades, and configures MTProxyMax proxy
+    options:
+      mtproxymax_version:
+        type: str
+        default: v1.4.0-LTS
+        description: Desired MTProxyMax version. The role refuses to downgrade if
+          an installed version is newer than this.
+      mtproxymax_installer_url:
+        type: str
+        default: https://raw.githubusercontent.com/SamNet-dev/MTProxyMax/refs/heads/main/install.sh
+        description: URL the installer script is downloaded from.
+      mtproxymax_version_regex:
+        type: str
+        default: ([0-9]+\.[0-9]+\.[0-9]+)
+        description: Regex used to extract a semver-ish string from `mtproxymax --version`
+          output.
+      mtproxymax_config_path:
+        type: path
+        default: /opt/MTProxy/proxy-multi.conf
+        description: Path to the live Telegram proxy config file managed by the refresh
+          script.
+      mtproxymax_mtproxy_port:
+        type: int
+        default: 443
+        description: Port MTProxyMax listens on; also opened in UFW by this role.
+      mtproxymax_metrics_port:
+        type: int
+        default: 9090
+        description: Port that exposes MTProxyMax telemt metrics in Prometheus format.
+      mtproxymax_mtproxy_faketls_domain:
+        type: str
+        default: yandex.com
+        description: Domain used for FakeTLS obfuscation.
+      mtproxymax_mtproxy_cpu_limit:
+        type: float
+        default: 0.2
+        description: CPU limit passed to the installer.
+      mtproxymax_mtproxy_memory_limit:
+        type: str
+        default: 300m
+        description: Memory limit passed to the installer.
+      mtproxymax_mtproxy_config_update_minute:
+        type: str
+        default: '17'
+        description: Cron minute field for the daily Telegram config refresh job.
+      mtproxymax_mtproxy_config_update_hour:
+        type: str
+        default: '4'
+        description: Cron hour field for the daily Telegram config refresh job.
+  ufw:
+    short_description: Installs and configures UFW with default-deny inbound policy
+    options:
+      ufw_default_incoming_policy:
+        type: str
+        default: deny
+        choices:
+        - allow
+        - deny
+        - reject
+        description: Default policy applied to incoming traffic.
+      ufw_default_outgoing_policy:
+        type: str
+        default: allow
+        choices:
+        - allow
+        - deny
+        - reject
+        description: Default policy applied to outgoing traffic.
+      ufw_block_icmp_chains:
+        type: list
+        elements: str
+        default:
+        - ufw-before-input
+        - ufw-before-forward
+        description: before.rules chains where ICMP echo-request (ping) is dropped.
+      ufw_before_rules_path:
+        type: path
+        default: /etc/ufw/before.rules
+        description: Path to ufw's before.rules file.
+      ufw_ssh_port:
+        type: int
+        description: Port always allowed for SSH/Ansible control access. Defaults
+          to ansible_port, falling back to 22, if not explicitly set.
+      ufw_extra_allow_rules:
+        type: list
+        elements: dict
+        default: []
+        description: Additional allow rules to open.
+        options:
+          port:
+            type: int
+            required: true
+            description: Port to allow.
+          proto:
+            type: str
+            default: tcp
+            choices:
+            - tcp
+            - udp
+            description: Protocol for the rule.
+  admin_users:
+    short_description: Manages admin user accounts, sudo access, and authorized SSH
+      keys
+    options:
+      admin_users_list:
+        type: list
+        elements: dict
+        default: []
+        description: Desired set of admin users. Any existing sudo-group member not
+          present here (and not root or the current connection user) is removed.
+        options:
+          username:
+            type: str
+            required: true
+            description: Login name for the account.
+          ssh_key:
+            type: str
+            required: true
+            no_log: true
+            description: Public SSH key installed as the account's sole authorized
+              key.
+          shell:
+            type: str
+            default: /bin/bash
+            description: Login shell for the account.
+      admin_users_sudo_group_name:
+        type: str
+        default: sudo
+        description: Name of the group granted sudo access and used to detect stale
+          admins.
+      admin_users_purge_home:
+        type: bool
+        default: true
+        description: Whether to delete the home directory when removing a stale admin
+          user.
+      admin_users_passwordless_sudo:
+        type: bool
+        default: true
+        description: Whether members of admin_users_sudo_group_name get NOPASSWD sudo.
+  vmagent:
+    short_description: Runs vmagent to scrape node_exporter and remote-write to VictoriaMetrics.
+    options:
+      vmagent_version:
+        type: str
+        default: v1.149.0
+        description: Desired vmagent version.
+      victoriametrics_server_fqdn:
+        type: str
+        required: true
+        description: Hostname of the central VictoriaMetrics server to remote-write
+          to.
+      victoriametrics_user:
+        type: str
+        required: true
+        description: Basic-auth username for remote-write. Must match the target VictoriaMetrics
+          server's victoriametrics_user.
+      victoriametrics_password:
+        type: str
+        required: true
+        no_log: true
+        description: Basic-auth password for remote-write. Must match the target VictoriaMetrics
+          server's victoriametrics_password.
+      vmagent_port:
+        type: int
+        default: 8429
+        description: Port vmagent's own HTTP listener binds to.
+      node_exporter_port:
+        type: int
+        default: 9100
+        description: Port the local node_exporter listens on.
+  victoriametrics:
+    short_description: Runs the central VictoriaMetrics storage container.
+    options:
+      victoriametrics_version:
+        type: str
+        default: v1.149.0
+        description: Desired VictoriaMetrics version.
+      victoriametrics_listen_ip:
+        type: str
+        default: 0.0.0.0
+        description: Address VictoriaMetrics listens on
+      victoriametrics_port:
+        type: str
+        default: 8428
+        description: Port VictoriaMetrics listens on
+      victoriametrics_user:
+        type: str
+        required: true
+        description: Basic-auth username. Must match the victoriametrics_user set on every vmagent
+          instance remote-writing to this server.
+      victoriametrics_password:
+        type: str
+        required: true
+        no_log: true
+        description: Basic-auth password. Must match the victoriametrics_password set on every
+          vmagent instance remote-writing to this server.
+      victoriametrics_retention_period:
+        type: str
+        default: 15d
+        description: How long to retain stored metrics.
+  x_ui:
+    short_description: Installs and configures the 3x-ui panel.
+    options:
+      x_ui_panel_username:
+        type: str
+        required: true
+        description: Admin username for the 3x-ui panel.
+      x_ui_panel_password:
+        type: str
+        required: true
+        no_log: true
+        description: Admin password for the 3x-ui panel.
+      x_ui_web_base_path:
+        type: str
+        required: true
+        description: URL base path the panel is served under.
+      x_ui_panel_port:
+        type: int
+        default: 2053
+        description: Port the 3x-ui panel listens on; opened in UFW by this role.
+      x_ui_panel_acme_port:
+        type: int
+        default: 80
+        description: Port used for ACME/Let's Encrypt HTTP challenges; opened in UFW
+          by this role.
+      x_ui_version:
+        type: str
+        default: 3.5.0
+        description: Desired 3x-ui version. The role refuses to downgrade if an installed
+          version is newer than this.

@@ -1,0 +1,233 @@
+
+---
+- name: Install MTproxyMax requirements
+  become: true
+  tags: [mtproxymax]
+  block:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install required system packages
+      ansible.builtin.apt:
+        name:
+          - git
+          - curl
+          - build-essential
+          - libssl-dev
+          - zlib1g-dev
+        state: present
+
+
+- name: Open firewall port for MTProto
+  community.general.ufw:
+    rule: allow
+    port: "{{ mtproxymax_mtproxy_port }}"
+    proto: tcp
+  become: true
+  tags: [mtproxymax, firewall, security]
+
+- name: Set mtproxymax_private_ip fact
+  ansible.builtin.set_fact:
+    mtproxymax_private_ip: "{{ ansible_default_ipv4.address }}"
+  tags: [mtproxymax]
+
+- name: Display IP configuration
+  ansible.builtin.debug:
+    msg:
+      - "Public IP (from inventory): {{ ansible_host }}"
+      - "Private IP (local interface): {{ mtproxymax_private_ip }}"
+      - "NAT will be configured: {{ ansible_host != mtproxymax_private_ip }}"
+  tags: [mtproxymax]
+
+# ================================================
+# 2. Detect current install / decide install vs upgrade vs error
+# ================================================
+- name: Detect current MTProxyMax install and decide whether to install, upgrade or abort
+  tags: [mtproxymax]
+  block:
+    - name: Check if MTProxyMax binary is present
+      ansible.builtin.command: which mtproxymax
+      register: mtproxymax_present
+      changed_when: false
+      failed_when: false
+
+    - name: Get installed MTProxyMax version
+      ansible.builtin.command: "{{ mtproxymax_present.stdout }} --version"
+      register: mtproxymax_installed_version_raw
+      changed_when: false
+      failed_when: false
+      when: mtproxymax_present.rc == 0
+
+    - name: Record installed MTProxyMax version as a fact
+      ansible.builtin.set_fact:
+        mtproxymax_installed_version: >-
+          {{ (mtproxymax_installed_version_raw.stdout | default('') | regex_search(mtproxymax_version_regex)) | default('0.0.0', true) }}
+
+    - name: Abort if the requested version is older than what's installed
+      ansible.builtin.fail:
+        msg: >-
+          mtproxymax_version is set to {{ mtproxymax_version }}, but MTProxyMax
+          {{ mtproxymax_installed_version }} is already installed. This role
+          refuses to downgrade — bump mtproxymax_version, or remove/downgrade
+          MTProxyMax manually first.
+      when: mtproxymax_installed_version is version(mtproxymax_version, '>')
+
+    - name: Determine whether an install or upgrade is required
+      ansible.builtin.set_fact:
+        mtproxymax_upgrade_needed: "{{ mtproxymax_installed_version is version(mtproxymax_version, '<') }}"
+
+# ================================================
+# 3. Install or upgrade MTProxyMax when required
+# ================================================
+- name: Install or upgrade MTProxyMax when required
+  become: true
+  when: mtproxymax_upgrade_needed
+  tags: [mtproxymax]
+  block:
+    - name: Download MTProxyMax installer
+      ansible.builtin.get_url:
+        url: "{{ mtproxymax_installer_url }}"
+        dest: /tmp/mtproxymax-install.sh
+        mode: "0755"
+        force: true
+
+    - name: Back up current MTProxyMax binary before upgrading
+      ansible.builtin.copy:
+        src: "{{ mtproxymax_present.stdout }}"
+        dest: "{{ mtproxymax_present.stdout }}.bak"
+        remote_src: true
+        mode: preserve
+      when:
+        - mtproxymax_present.rc == 0
+
+    - name: Install or upgrade MTProxyMax non-interactively
+      ansible.builtin.script: mtproxymax_run_installation_interactive.sh
+      environment:
+        MTPROXYMAX_PORT: "{{ mtproxymax_mtproxy_port }}"
+        MTPROXYMAX_FAKETLS_DOMAIN: "{{ mtproxymax_mtproxy_faketls_domain }}"
+        MTPROXYMAX_CPU_LIMIT: "{{ mtproxymax_mtproxy_cpu_limit }}"
+        MTPROXYMAX_MEMORY_LIMIT: "{{ mtproxymax_mtproxy_memory_limit }}"
+        MTPROXYMAX_VERSION: "{{ mtproxymax_version }}"
+        PROXY_METRICS_PORT: "{{ mtproxymax_metrics_port }}"
+        TERM: linux # helps some prompts behave as if interactive
+      args:
+        executable: bash
+      timeout: 600
+      notify: Restart mtproxymax
+
+- name: Check successful MPRoxyMax installation
+  when: mtproxymax_upgrade_needed
+  tags: [mtproxymax]
+  block:
+    - name: Flush handlers so we verify against the post-install state
+      ansible.builtin.meta: flush_handlers
+
+    - name: Check MTProxyMax is reachable after install/upgrade
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: "{{ mtproxymax_mtproxy_port }}"
+        timeout: 30
+      register: mtproxymax_health_check
+      ignore_errors: true
+
+- name: Roll back to  MTProxyMax binary if the upgrade broke the service
+  when:
+    - mtproxymax_upgrade_needed
+    - mtproxymax_health_check is failed
+    - mtproxymax_present.rc == 0
+  become: true
+  tags: [mtproxymax]
+  block:
+    - name: Restore previous MTProxyMax binary
+      ansible.builtin.copy:
+        src: "{{ mtproxymax_present.stdout }}.bak"
+        dest: "{{ mtproxymax_present.stdout }}"
+        remote_src: true
+        mode: preserve
+
+    - name: Restart mtproxymax with the restored binary
+      ansible.builtin.systemd:
+        name: mtproxymax
+        state: restarted
+
+    - name: Fail the play so the bad upgrade is visible
+      ansible.builtin.fail:
+        msg: >-
+          MTProxyMax failed to come back up after upgrading to
+          {{ mtproxymax_version }}. Rolled back to the previous binary.
+
+- name: Fail if a fresh install never came up
+  ansible.builtin.fail:
+    msg: "MTProxyMax did not start after installation."
+  when:
+    - mtproxymax_upgrade_needed
+    - mtproxymax_health_check is failed
+    - mtproxymax_present.rc != 0
+  tags: [mtproxymax]
+
+# ================================================
+# 4. NAT Configuration (Idempotent & Dynamic)
+# ================================================
+- name: Configure NAT for MTProxyMax
+  tags: [mtproxymax]
+  block:
+    - name: Get current NAT configuration from MTProxyMax
+      ansible.builtin.command: mtproxymax config get nat
+      register: mtproxymax_current_nat_config
+      changed_when: false
+      failed_when: false
+
+    - name: Parse current NAT value
+      ansible.builtin.set_fact:
+        mtproxymax_current_nat_value: "{{ mtproxymax_current_nat_config.stdout | trim if mtproxymax_current_nat_config.stdout != '' else '' }}"
+
+    - name: Determine desired NAT configuration
+      ansible.builtin.set_fact:
+        mtproxymax_desired_nat_value: "{{ mtproxymax_private_ip + ':' + ansible_host if ansible_host != mtproxymax_private_ip else '' }}"
+
+    - name: Update NAT configuration if needed
+      ansible.builtin.command: "mtproxymax config set nat {{ mtproxymax_desired_nat_value }}"
+      when: mtproxymax_desired_nat_value != mtproxymax_current_nat_value
+      changed_when: true
+      notify: Restart mtproxymax
+      become: true
+
+
+# ================================================
+# 5. Setup automatic MTProxyMax Telegram config refresh
+# ================================================
+- name: Setup automatic MTProxyMax Telegram config refresh
+  become: true
+  tags: [mtproxymax]
+  block:
+    - name: Deploy safe config-refresh script
+      ansible.builtin.template:
+        src: mtproxymax_update_config.sh.j2
+        dest: /usr/local/sbin/mtproxymax_update_config.sh
+        owner: root
+        group: root
+        mode: "0750"
+
+    - name: Setup daily cron job to refresh proxy-multi.conf
+      ansible.builtin.cron:
+        name: "Update Telegram MTProto config"
+        minute: "{{ mtproxymax_mtproxy_config_update_minute }}"
+        hour: "{{ mtproxymax_mtproxy_config_update_hour }}"
+        job: "/usr/local/sbin/mtproxymax_update_config.sh"
+        user: root
+        state: present
+
+# ================================================
+# 6. Final Service Management
+# ================================================
+
+- name: Ensure MTProxyMax service is running and enabled
+  ansible.builtin.systemd:
+    name: mtproxymax
+    state: started
+    enabled: true
+    daemon_reload: true
+  become: true
+  tags: [mtproxymax]
