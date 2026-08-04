@@ -18,7 +18,7 @@
 - name: Run vmagent container
   community.docker.docker_container:
     name: vmagent
-    image: victoriametrics/vmagent:latest
+    image: "victoriametrics/vmagent:{{ vmagent_version }}"
     state: started
     restart_policy: unless-stopped
     network_mode: host

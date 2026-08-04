@@ -1,2 +1,1 @@
----
-tailscale_auth_key: ""
+tailscale_version: "1.102.1"

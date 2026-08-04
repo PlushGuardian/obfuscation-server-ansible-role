@@ -1,8 +1,6 @@
 ---
 - name: Check preconditions for SSH hardening
-  tags:
-    - ssh
-    - security
+  tags: [ssh, security]
   block:
     - name: Fail if password authentication is used for the Ansible connection
       ansible.builtin.assert:
@@ -49,9 +47,7 @@
 
 - name: Apply SSH hardening
   become: true
-  tags:
-    - ssh
-    - security
+  tags: [ssh, security]
   block:
     - name: Find all override files in sshd_config.d
       ansible.builtin.find:

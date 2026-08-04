@@ -20,14 +20,14 @@
 - name: Run VictoriaMetrics container
   community.docker.docker_container:
     name: victoria-metrics
-    image: victoriametrics/victoria-metrics:latest
+    image: "victoriametrics/victoria-metrics:{{ victoriametrics_version }}"
     state: started
     restart_policy: unless-stopped
     network_mode: host
     command:
       - "-storageDataPath=/storage"
       - "-retentionPeriod={{ victoriametrics_retention_period }}"
-      - "-httpListenAddr={{ victoriametrics_listen_addr }}"
+      - "-httpListenAddr={{ victoriametrics_listen_ip }}:{{ victoriametrics_port }}"
       - "-httpAuth.username={{ victoriametrics_user }}"
       - "-httpAuth.password={{ victoriametrics_password }}"
       - "-selfScrapeInterval=15s"

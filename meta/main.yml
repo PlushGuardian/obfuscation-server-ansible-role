@@ -1,6 +1,6 @@
 ---
 galaxy_info:
-  role_name: obfuscation_cluster
+  role_name: obfuscation_server
   author: PlushGuardian
   namespace: plushguardian
   description: >-

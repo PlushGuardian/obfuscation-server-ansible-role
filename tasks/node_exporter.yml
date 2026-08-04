@@ -2,7 +2,7 @@
 - name: Run node_exporter container
   community.docker.docker_container:
     name: node_exporter
-    image: quay.io/prometheus/node-exporter:latest
+    image: "quay.io/prometheus/node-exporter:{{ node_exporter_version }}"
     state: started
     restart_policy: unless-stopped
     network_mode: host
@@ -17,6 +17,4 @@
       - /sys:/host/sys:ro
       - /:/host/root:ro
   become: true
-  tasks:
-    - node_exporter
-    - monitoring
+  tags: [node_exporter, monitoring]

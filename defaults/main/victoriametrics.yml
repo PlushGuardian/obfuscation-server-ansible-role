@@ -1,4 +1,2 @@
 victoriametrics_retention_period: 15d
-victoriametrics_listen_addr: ""
-victoriametrics_user: ""
-victoriametrics_password: ""
+victoriametrics_version: "v1.149.0"

@@ -16,18 +16,14 @@
         msg: "x_ui_web_base_path must be set and non-empty"
       when: x_ui_web_base_path | length == 0
 
-- name: Allow traffic through UFW
+- name: Allow traffic through UFW for 3X-UI
   become: true
-  tags:
-    - x_ui
-    - firewall
-    - security
+  tags: [x_ui, firewall, security]
   block:
     - name: Allow traffic on port 80 for ACME
       community.general.ufw:
         rule: allow
         port: "{{ x_ui_panel_acme_port }}"
-
 
     - name: Allow traffic on 3X-UI panel port
       community.general.ufw:
@@ -39,8 +35,7 @@
 #   INSTALL / UPDATE 3X-UI TO x_ui_version
 # =========================================
 - name: Make prechecks before install
-  tags:
-    - x_ui
+  tags: [x_ui]
   block:
     - name: Check if 3x-ui files are present
       ansible.builtin.stat:
@@ -102,8 +97,7 @@
   retries: 3
   delay: 5
   when: not x_ui_installed or x_ui_needs_update
-  tags:
-    - x_ui
+  tags: [x_ui]
 
 - name: Install or update 3x-ui non-interactively with all settings applied
   ansible.builtin.command: "/tmp/install-x-ui.sh {{ x_ui_version }}"
@@ -119,17 +113,14 @@
   when: not x_ui_installed or x_ui_needs_update
   changed_when: true
   no_log: true                                    # environment block carries the password
-  tags:
-    - x_ui
+  tags: [x_ui]
 
 # =========================================
 #        UPDATE WEB PAGE CREDENTIALS
 # =========================================
 - name: Update web page credentials
   become: true
-  tags:
-    - x_ui
-    - security
+  tags: [x_ui, security]
   block:
     - name: Compute desired x-ui credentials fingerprint
       ansible.builtin.set_fact:

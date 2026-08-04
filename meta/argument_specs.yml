@@ -16,6 +16,10 @@ argument_specs:
   node_exporter:
     short_description: Runs the Prometheus node_exporter container
     options:
+      node_exporter_version:
+        type: str
+        default: v1.12.1
+        description: Desired node_exporte version.
       node_exporter_port:
         type: int
         default: 9100
@@ -24,7 +28,7 @@ argument_specs:
           (it currently relies on Ansible's shared per-host variable scope rather
           than an explicit hand-off between the two roles).
   mtproxymax:
-    short_description: Installs, upgrades, and configures the MTProxyMax MTProto proxy
+    short_description: Installs, upgrades, and configures MTProxyMax proxy
     options:
       mtproxymax_version:
         type: str
@@ -164,17 +168,21 @@ argument_specs:
   vmagent:
     short_description: Runs vmagent to scrape node_exporter and remote-write to VictoriaMetrics.
     options:
-      vm_server_fqdn:
+      vmagent_version:
+        type: str
+        default: v1.149.0
+        description: Desired vmagent version.
+      victoriametrics_server_fqdn:
         type: str
         required: true
         description: Hostname of the central VictoriaMetrics server to remote-write
           to.
-      vm_user:
+      victoriametrics_user:
         type: str
         required: true
         description: Basic-auth username for remote-write. Must match the target VictoriaMetrics
           server's victoriametrics_user.
-      vm_password:
+      victoriametrics_password:
         type: str
         required: true
         no_log: true
@@ -193,20 +201,28 @@ argument_specs:
       duplicates the manual assert/fail block already in tasks/main.yml — remove that
       block once this file is in place.
     options:
-      victoriametrics_listen_addr:
+      victoriametrics_version:
         type: str
-        default: 0.0.0.0:8428
-        description: Address/port VictoriaMetrics listens on
+        default: v1.149.0
+        description: Desired VictoriaMetrics version.
+      victoriametrics_listen_ip:
+        type: str
+        default: 0.0.0.0
+        description: Address VictoriaMetrics listens on
+      victoriametrics_port:
+        type: str
+        default: 8428
+        description: Port VictoriaMetrics listens on
       victoriametrics_user:
         type: str
         required: true
-        description: Basic-auth username. Must match the vm_user set on every vmagent
+        description: Basic-auth username. Must match the victoriametrics_user set on every vmagent
           instance remote-writing to this server.
       victoriametrics_password:
         type: str
         required: true
         no_log: true
-        description: Basic-auth password. Must match the vm_password set on every
+        description: Basic-auth password. Must match the victoriametrics_password set on every
           vmagent instance remote-writing to this server.
       victoriametrics_retention_period:
         type: str

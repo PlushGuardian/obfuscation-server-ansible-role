@@ -7,4 +7,4 @@ scrape_configs:
       - targets: ['localhost:{{ node_exporter_port }}']
   - job_name: 'mtproxymax'
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ['localhost:{{ mtproxymax_metrics_port }}']

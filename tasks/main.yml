@@ -1,32 +1,62 @@
 ---
 # Core setup: SSH hardening, admin users, firewall.
 # Applies to every host this role runs against.
-- import_tasks: ssh.yml
-- import_tasks: admin_users.yml
-- import_tasks: ufw.yml
+- name: SSH hardening
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: ssh
+
+- name: Admin users
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: admin_users
+
+- name: UFW firewall
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: ufw
 
 # TODO configure headscale
 
 # Multi-node connectivity (Tailscale) — skip on standalone installs.
-- import_tasks: tailscale.yml
+- name: Tailscale
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: tailscale
   when: is_cluster_installation | default(true)
 
 # Monitoring agents — every host, when monitoring is enabled.
-- import_tasks: node_exporter.yml
+- name: node_exporter
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: node_exporter
   when: enable_monitoring | default(true)
-- import_tasks: vmagent.yml
+
+- name: vmagent
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: vmagent
   when: enable_monitoring | default(true)
 
 # Metrics storage — only on hosts in the monitoring_servers group.
-- import_tasks: victoriametrics.yml
+- name: VictoriaMetrics
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: victoriametrics
   when:
     - enable_monitoring | default(true)
     - inventory_hostname in groups['monitoring_servers'] | default([])
 
 # MTProxyMax — only on hosts in the mtproxymax_hosts group.
-- import_tasks: mtproxymax.yml
+- name: MTProxyMax
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: mtproxymax
   when: inventory_hostname in groups['mtproxymax_hosts'] | default([])
 
 # 3X-UI — only on hosts in the x_ui_hosts group.
-- import_tasks: x_ui.yml
+- name: 3X-UI
+  ansible.builtin.include_role:
+    name: obfuscation_server
+    tasks_from: x_ui
   when: inventory_hostname in groups['x_ui_hosts'] | default([])
