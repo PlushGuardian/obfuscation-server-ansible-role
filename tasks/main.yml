@@ -16,6 +16,12 @@
     name: obfuscation_server
     tasks_from: ufw
 
+- name: Configure docker
+  import_role:
+    name: geerlingguy.docker
+  become: yes
+  when: inventory_hostname in groups['mtproxymax_hosts'] | default([])
+
 # TODO configure headscale
 
 # Multi-node connectivity (Tailscale) — skip on standalone installs.
