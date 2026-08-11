@@ -34,7 +34,6 @@
           grep -c -v -e '^\s*$' -e '^\s*#'
           {{ ansible_facts.getent_passwd[ansible_user][4] }}/.ssh/authorized_keys
       register: ssh_hardening_key_count
-      changed_when: false
       failed_when: false
 
     - name: Fail if the admin user has no usable authorized key
