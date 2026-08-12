@@ -20,7 +20,7 @@
   ansible.builtin.set_fact:
     docker_target: >-
       {{ (inventory_hostname in groups['mtproxymax_hosts'] | default([]))
-      or (inventory_hostname in groups['3x_ui_hosts'] | default([])) }}
+      or (inventory_hostname in groups['x_ui_hosts'] | default([])) }}
 
 - name: Check if Docker is already installed
   ansible.builtin.command: docker --version
