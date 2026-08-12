@@ -29,7 +29,3 @@ galaxy_info:
     - firewall
     - monitoring
     - docker
-
-dependencies:
-  - role: geerlingguy.docker
-    version: 8.0.0
