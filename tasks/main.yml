@@ -19,11 +19,11 @@
 # TODO configure headscale
 
 # Multi-node connectivity (Tailscale) — skip on standalone installs.
-- name: Tailscale
-  ansible.builtin.include_role:
-    name: obfuscation_server
-    tasks_from: tailscale
-  when: is_cluster_installation
+# - name: Tailscale
+#   ansible.builtin.include_role:
+#     name: obfuscation_server
+#     tasks_from: tailscale
+#   when: is_cluster_installation
 
 # Monitoring agents — every host, when monitoring is enabled.
 - name: node_exporter
