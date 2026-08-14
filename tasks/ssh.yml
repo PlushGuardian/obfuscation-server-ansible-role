@@ -35,7 +35,7 @@
           {{ ansible_facts.getent_passwd[ansible_user][4] }}/.ssh/authorized_keys
       register: ssh_hardening_key_count
       failed_when: false
-      check_mode: true
+      check_mode: false
 
     - name: Fail if the admin user has no usable authorized key
       ansible.builtin.assert:
