@@ -16,31 +16,6 @@
     name: obfuscation_server
     tasks_from: ufw
 
-# - name: Determine if this host needs docker
-#   ansible.builtin.set_fact:
-#     docker_target: >-
-#       {{ (inventory_hostname in groups['mtproxymax_hosts'] | default([]))
-#       or (inventory_hostname in groups['x_ui_hosts'] | default([])) }}
-
-# - name: Check if Docker is already installed
-#   ansible.builtin.command: docker --version
-#   register: docker_check
-#   changed_when: false
-#   failed_when: false
-#   check_mode: false
-#   when: docker_target and ansible_check_mode
-
-# - name: Show Docker install status (dry run)
-#   ansible.builtin.debug:
-#     msg: "Docker is {{ 'already installed' if docker_check.rc == 0 else 'not installed - would be installed by this playbook' }}"
-#   when: docker_target and ansible_check_mode
-
-# - name: Configure docker
-#   import_role:
-#     name: geerlingguy.docker
-#   become: yes
-#   when: docker_target and not ansible_check_mode
-
 # TODO configure headscale
 
 # Multi-node connectivity (Tailscale) — skip on standalone installs.

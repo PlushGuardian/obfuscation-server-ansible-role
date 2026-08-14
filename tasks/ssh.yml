@@ -35,12 +35,13 @@
           {{ ansible_facts.getent_passwd[ansible_user][4] }}/.ssh/authorized_keys
       register: ssh_hardening_key_count
       failed_when: false
+      check_mode: true
 
     - name: Fail if the admin user has no usable authorized key
       ansible.builtin.assert:
         that: (ssh_hardening_key_count.stdout | default('0') | int) > 0
         fail_msg: >-
-          No usable key found in ~{{ ansible_user }}/.ssh/authorized_keys.
+          No usable key found in /home/{{ ansible_user }}/.ssh/authorized_keys.
           Disabling password authentication now would lock you out — deploy a
           key first.
 
