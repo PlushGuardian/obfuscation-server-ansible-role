@@ -29,3 +29,7 @@ galaxy_info:
     - firewall
     - monitoring
     - docker
+
+dependencies:
+  - src: geerlingguy.docker
+
