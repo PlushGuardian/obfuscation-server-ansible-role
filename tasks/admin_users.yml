@@ -37,7 +37,7 @@
       ansible.builtin.set_fact:
         admin_users_current_admins: >-
           {{
-            (admin_users_sudo_group.ansible_facts.getent_group | default({}))
+            (admin_users_sudo_group.ansible_facts.getent_group | default({}, true))
             .get(admin_users_sudo_group_name, ['', '', ''])[2]
             | split(',')
             | reject('equalto', '')
