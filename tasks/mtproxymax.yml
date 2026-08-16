@@ -8,6 +8,7 @@
       ansible.builtin.apt:
         update_cache: true
         cache_valid_time: 3600
+      changed_when: false
 
     - name: Install required system packages
       ansible.builtin.apt:
@@ -30,7 +31,7 @@
 
 - name: Set mtproxymax_private_ip fact
   ansible.builtin.set_fact:
-    mtproxymax_private_ip: "{{ ansible_default_ipv4.address }}"
+    mtproxymax_private_ip: "{{ ansible_facts.default_ipv4.address }}"
   tags: [mtproxymax]
 
 - name: Display IP configuration
@@ -84,6 +85,12 @@
     - name: Determine whether an install or upgrade is required
       ansible.builtin.set_fact:
         mtproxymax_upgrade_needed: "{{ mtproxymax_installed_version is version(mtproxymax_version, '<') }}"
+
+    - name: Show upgrade status in check mode
+      ansible.builtin.debug:
+        msg: "Upgrade would be performed from {{ mtproxymax_installed_version }} to {{ mtproxymax_version }}"
+      when:
+        - mtproxymax_upgrade_needed
 
 # ================================================
 # 3. Install or upgrade MTProxyMax when required
@@ -238,4 +245,4 @@
     daemon_reload: true
   become: true
   tags: [mtproxymax]
-  when: not ansible_check_mode 
+  when: not ansible_check_mode
