@@ -53,6 +53,7 @@
       register: mtproxymax_present
       changed_when: false
       failed_when: false
+      check_mode: false
 
     - name: Get installed MTProxyMax version
       ansible.builtin.command: "{{ mtproxymax_present.stdout }} version"
@@ -60,6 +61,7 @@
       become: true
       changed_when: false
       failed_when: false
+      check_mode: false
       when: mtproxymax_present.rc == 0
 
     - name: Record installed MTProxyMax version as a fact
