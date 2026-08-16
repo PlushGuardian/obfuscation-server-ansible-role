@@ -1,8 +1,0 @@
----
-galaxy_info:
-  role_name: x_ui
-  description: Installs and configures the 3x-ui panel, with idempotent credential updates
-  min_ansible_version: "2.15"
-
-dependencies:
-  - role: ufw

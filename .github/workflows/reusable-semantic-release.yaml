@@ -1,28 +1,29 @@
+---
 name: Run Semantic Release
 
 on:
   workflow_call:
     inputs:
       dry_run:
-        description: 'Run in dry‑run mode (no release published)'
+        description: "Run in dry‑run mode (no release published)"
         type: boolean
         default: false
       image:
-        description: 'Docker image containing semantic-release'
+        description: "Docker image containing semantic-release"
         type: string
-        default: 'docker.io/plushguardian/semantic-release-for-ci:1.0.2'
+        default: "docker.io/plushguardian/semantic-release-for-ci:1.0.2"
     secrets:
       gh_token:
         required: true
     outputs:
       new_version:
-        description: 'The newly created version tag (e.g., v1.2.3)'
+        description: "The newly created version tag (e.g., v1.2.3)"
         value: ${{ jobs.run-semantic-release.outputs.new_version }}
       release_published:
-        description: 'Whether a new release was published in this run'
+        description: "Whether a new release was published in this run"
         value: ${{ jobs.run-semantic-release.outputs.release_published }}
       release_notes:
-        description: 'Release notes (only populated in dry‑run mode)'
+        description: "Release notes (only populated in dry‑run mode)"
         value: ${{ jobs.run-semantic-release.outputs.release_notes }}
 
 jobs:
@@ -63,7 +64,6 @@ jobs:
           set -e
           echo "exit_code=${exit_code}" >> $GITHUB_OUTPUT
         shell: sh
-
 
       # ── Parse output ────────────────────────────────
 

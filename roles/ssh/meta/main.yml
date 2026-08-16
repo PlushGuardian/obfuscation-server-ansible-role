@@ -1,7 +1,0 @@
----
-galaxy_info:
-  role_name: ssh
-  description: Hardens sshd — disables password auth, disables root login, requires a working key first
-  min_ansible_version: "2.15"
-
-dependencies: []

@@ -1,9 +1,0 @@
----
-galaxy_info:
-  role_name: vmagent
-  description: Runs vmagent to scrape node_exporter and remote-write metrics to a central VictoriaMetrics server
-  min_ansible_version: "2.15"
-
-dependencies:
-  - role: geerlingguy.docker
-    tags: [docker]

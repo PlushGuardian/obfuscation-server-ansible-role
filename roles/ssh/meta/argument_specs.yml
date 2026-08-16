@@ -1,9 +1,0 @@
----
-argument_specs:
-  main:
-    short_description: >-
-      Hardens sshd (key-only auth, no root login, no empty passwords).
-      Takes no role variables — behavior is entirely precondition-driven,
-      based on the current connection (ansible_user, ansible_password) and
-      the target host's OS family.
-    options: {}

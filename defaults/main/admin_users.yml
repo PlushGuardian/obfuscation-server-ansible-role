@@ -1,0 +1,4 @@
+admin_users_list: []
+admin_users_sudo_group_name: admins
+admin_users_passwordless_sudo: true
+admin_users_purge_home: true

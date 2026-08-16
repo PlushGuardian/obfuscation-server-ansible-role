@@ -1,0 +1,20 @@
+---
+- name: Run node_exporter container
+  community.docker.docker_container:
+    name: node_exporter
+    image: "quay.io/prometheus/node-exporter:{{ node_exporter_version }}"
+    state: started
+    restart_policy: unless-stopped
+    network_mode: host
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/host/root"
+      - "--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/containers/.+)"
+      - "--web.listen-address=:{{ node_exporter_port }}"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro
+  become: true
+  tags: [node_exporter, monitoring]
