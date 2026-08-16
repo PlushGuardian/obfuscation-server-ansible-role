@@ -23,7 +23,7 @@ argument_specs:
       node_exporter_port:
         type: int
         default: 9100
-        description: Port node_exporter listens on. 
+        description: Port node_exporter listens on.
   mtproxymax:
     short_description: Installs, upgrades, and configures MTProxyMax proxy
     options:
@@ -36,11 +36,6 @@ argument_specs:
         type: str
         default: https://raw.githubusercontent.com/SamNet-dev/MTProxyMax/refs/heads/main/install.sh
         description: URL the installer script is downloaded from.
-      mtproxymax_version_regex:
-        type: str
-        default: ([0-9]+\.[0-9]+\.[0-9]+)
-        description: Regex used to extract a semver-ish string from `mtproxymax --version`
-          output.
       mtproxymax_config_path:
         type: path
         default: /opt/MTProxy/proxy-multi.conf
