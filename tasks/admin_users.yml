@@ -68,7 +68,7 @@
       loop_control:
         label: "{{ item.username }}"
       no_log: true
-      ignore_errors: "{{ ansible_check_mode }}"
+      when: (item.username in ansible_facts.getent_passwd) or (not ansible_check_mode)
 
     - name: Allow passwordless sudo for admin group
       ansible.builtin.copy:
