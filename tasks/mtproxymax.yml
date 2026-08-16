@@ -49,6 +49,7 @@
   block:
     - name: Check if MTProxyMax binary is present
       ansible.builtin.command: which mtproxymax
+      become: true
       register: mtproxymax_present
       changed_when: false
       failed_when: false
