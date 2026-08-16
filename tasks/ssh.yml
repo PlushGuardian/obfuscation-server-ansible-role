@@ -82,3 +82,6 @@
       loop_control:
         label: "{{ item.key }}"
       notify: Restart ssh
+
+    - name: Flush handlers to verify the post-install state
+      ansible.builtin.meta: flush_handlers

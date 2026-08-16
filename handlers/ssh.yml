@@ -3,6 +3,7 @@
 - name: Validate sshd configuration
   ansible.builtin.command: sshd -t
   changed_when: false
+  become: true
   listen: Restart ssh
 
 - name: Restart ssh
@@ -10,3 +11,4 @@
     name: "{{ ssh_hardening_service_name }}"
     state: restarted
   listen: Restart ssh
+  become: true
