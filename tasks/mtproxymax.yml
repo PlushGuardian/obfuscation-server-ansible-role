@@ -238,3 +238,4 @@
     daemon_reload: true
   become: true
   tags: [mtproxymax]
+  when: not ansible_check_mode 
