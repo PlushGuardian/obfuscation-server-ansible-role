@@ -26,23 +26,35 @@
         is not defined
         or admin_users_sudo_group_name not in admin_users_sudo_group.ansible_facts.getent_group
 
-    - name: Get current members of the admin sudo group
+    # - name: Get current members of the admin sudo group
+    #   ansible.builtin.getent:
+    #     database: group
+    #     key: "{{ admin_users_sudo_group_name }}"
+    #     fail_key: false
+    #   register: admin_users_sudo_group
+
+    # - name: Compute current vs desired admin users
+    #   ansible.builtin.set_fact:
+    #     admin_users_current_admins: >-
+    #       {{
+    #         (admin_users_sudo_group.ansible_facts.getent_group | default({}, true))
+    #         .get(admin_users_sudo_group_name, ['', '', ''])[2]
+    #         | split(',')
+    #         | reject('equalto', '')
+    #         | list
+    #       }}
+
+    - name: Gather group information from the system
       ansible.builtin.getent:
         database: group
         key: "{{ admin_users_sudo_group_name }}"
         fail_key: false
-      register: admin_users_sudo_group
+      # This populates ansible_facts.getent_group with the group's data.
+      # If the group is missing, the key simply won't be added to the fact.
 
-    - name: Compute current vs desired admin users
+    - name: Build the list of admin users (empty if group missing or empty)
       ansible.builtin.set_fact:
-        admin_users_current_admins: >-
-          {{
-            (admin_users_sudo_group.ansible_facts.getent_group | default({}, true))
-            .get(admin_users_sudo_group_name, ['', '', ''])[2]
-            | split(',')
-            | reject('equalto', '')
-            | list
-          }}
+        admin_users_current_admins: "{{ ansible_facts.getent_group[admin_users_sudo_group_name] | default([]) }}"
         admin_users_new_admins: "{{ admin_users_list | map(attribute='username') | list }}"
         admin_users_protected: "{{ ['root', ansible_user | default(omit)] | select('string') | list }}"
 
