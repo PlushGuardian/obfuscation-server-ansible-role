@@ -54,13 +54,7 @@
 
     - name: Build the list of admin users (empty if group missing or empty)
       ansible.builtin.set_fact:
-        admin_users_current_admins: >-
-          {{
-            ansible_facts.getent_group[admin_users_sudo_group_name]
-            if ansible_facts.getent_group is defined
-              and admin_users_sudo_group_name in ansible_facts.getent_group
-            else []
-          }}
+        admin_users_current_admins: "{{ ansible_facts.getent_group[admin_users_sudo_group_name] | default([]) }}"
         admin_users_new_admins: "{{ admin_users_list | map(attribute='username') | list }}"
         admin_users_protected: "{{ ['root', ansible_user | default(omit)] | select('string') | list }}"
 
@@ -70,7 +64,7 @@
         state: absent
         remove: "{{ admin_users_purge_home }}"
         force: true
-      loop: "{{ admin_users_current_admins }}"
+      loop: "{{ admin_users_current_admins | default([]) }}"
       when:
         - item not in admin_users_new_admins
         - item not in admin_users_protected
