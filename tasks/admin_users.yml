@@ -30,7 +30,7 @@
       ansible.builtin.getent:
         database: group
         key: "{{ admin_users_sudo_group_name }}"
-        fail_on_missing: false
+        fail_key: false
       register: admin_users_sudo_group
 
     - name: Compute current vs desired admin users
